@@ -724,7 +724,7 @@ body {
 
 .detail-info-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 20px;
 }
 
@@ -739,6 +739,11 @@ body {
     flex-direction: column;
 }
 
+.detail-info-item.half-width {
+    grid-column: span 2;
+    flex-direction: column;
+}
+
 .detail-info-item label {
     min-width: 130px;
     color: #666;
@@ -746,8 +751,14 @@ body {
     padding-top: 6px;
 }
 
-.detail-info-item.full-width label {
+.detail-info-item.full-width label,
+.detail-info-item.half-width label {
     padding-top: 0;
+}
+
+/* 统一上传按钮宽度 */
+.btn-upload {
+    width: 80px;
 }
 
 .detail-info-item span:not(.file-hint):not(.status-badge):not(.warning-badge) {
@@ -835,6 +846,90 @@ body {
 
 .file-remove:hover {
     background-color: #fff1f0;
+}
+
+/* 文件下载链接 */
+.file-download-links {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+.download-link-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.download-link-item label {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0;
+    margin-bottom: 4px;
+}
+
+.download-link {
+    color: #1890ff;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.download-link:hover {
+    background-color: #e6f7ff;
+    text-decoration: underline;
+}
+
+.download-link.disabled {
+    color: #d9d9d9;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 小型文件列表 */
+.file-list-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    max-width: 200px;
+}
+
+.file-item-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    gap: 8px;
+}
+
+.file-item-mini .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    margin-right: 0;
+}
+
+.file-item-mini .file-remove {
+    padding: 0 4px;
+    font-size: 12px;
+}
+
+/* 小按钮样式 */
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+    height: auto;
+    min-height: 28px;
 }
 
 /* 详情表格区域 */

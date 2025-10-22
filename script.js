@@ -15,7 +15,7 @@ let customsFilteredData = [];
 let currentCustomsStatus = 'all'; // 当前选中的报关状态，默认为全部
 let currentCustomsDetail = null; // 当前查看详情的报关单
 let currentActionType = ''; // 当前操作类型
-let uploadedFiles = { exportDraft: [], export: [] }; // 已上传的文件
+let uploadedFiles = { exportDraft: [], export: [], CI: [], PL: [], DN: [], VAT: [] }; // 已上传的文件
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
@@ -1080,6 +1080,26 @@ function showCustomsDetail(item) {
     }
     document.getElementById('detail_importReleaseDate_display').style.display = 'inline-block';
     
+    // 显示DN开票状态
+    const dnInvoiceSection = document.getElementById('dnInvoiceSection');
+    dnInvoiceSection.style.display = 'flex';
+    if (item.dnInvoiceStatus && item.dnInvoiceStatusName) {
+        document.getElementById('detail_dnInvoiceStatus').innerHTML = 
+            `<span class="invoice-badge invoice-${item.dnInvoiceStatus}">${item.dnInvoiceStatusName}</span>`;
+    } else {
+        document.getElementById('detail_dnInvoiceStatus').textContent = '-';
+    }
+    
+    // 显示VAT开票状态
+    const vatInvoiceSection = document.getElementById('vatInvoiceSection');
+    vatInvoiceSection.style.display = 'flex';
+    if (item.vatInvoiceStatus && item.vatInvoiceStatusName) {
+        document.getElementById('detail_vatInvoiceStatus').innerHTML = 
+            `<span class="invoice-badge invoice-${item.vatInvoiceStatus}">${item.vatInvoiceStatusName}</span>`;
+    } else {
+        document.getElementById('detail_vatInvoiceStatus').textContent = '-';
+    }
+    
     // 生成商品列表
     generateDetailProductList(item);
     
@@ -1134,16 +1154,41 @@ function generateDetailProductList(item) {
     }
 }
 
+// 下载文件
+function downloadFile(fileType) {
+    if (!currentCustomsDetail) {
+        alert('无详情信息');
+        return;
+    }
+    
+    // 模拟文件下载
+    const fileName = `${currentCustomsDetail.batchNo}_${fileType}.xlsx`;
+    alert(`正在下载文件: ${fileName}\n\n实际应用中,这里会触发真实的文件下载。`);
+    console.log(`下载文件: ${fileType}`, {
+        batchNo: currentCustomsDetail.batchNo,
+        fileType: fileType,
+        fileName: fileName
+    });
+    
+    // 实际应用中，这里应该是:
+    // window.open(`/api/download/${currentCustomsDetail.id}/${fileType}`, '_blank');
+    // 或者使用fetch下载并保存文件
+}
+
 // 关闭详情页
 function closeCustomsDetail() {
     document.getElementById('customsDetailPage').classList.remove('show');
     currentCustomsDetail = null;
     currentActionType = '';
-    uploadedFiles = { exportDraft: [], export: [] };
+    uploadedFiles = { exportDraft: [], export: [], CI: [], PL: [], DN: [], VAT: [] };
     
     // 清空文件列表
     document.getElementById('exportDraftFileList').innerHTML = '';
     document.getElementById('exportFileList').innerHTML = '';
+    document.getElementById('ciFileList').innerHTML = '';
+    document.getElementById('plFileList').innerHTML = '';
+    document.getElementById('dnFileList').innerHTML = '';
+    document.getElementById('vatFileList').innerHTML = '';
     
     // 重置表单
     document.getElementById('detail_exportWarning').value = '';
@@ -1201,6 +1246,61 @@ function displayFileList(type) {
         `;
         listContainer.appendChild(fileItem);
     });
+}
+
+// 处理材料文件上传 (CI/PL/DN/VAT)
+function handleMaterialFileUpload(input, type, maxFiles) {
+    const files = Array.from(input.files);
+    const currentFiles = uploadedFiles[type] || [];
+    
+    // 检查文件数量
+    if (currentFiles.length + files.length > maxFiles) {
+        alert(`${type}最多只能上传${maxFiles}个文件`);
+        input.value = '';
+        return;
+    }
+    
+    // 检查文件大小
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    for (let file of files) {
+        if (file.size > maxSize) {
+            alert(`文件"${file.name}"超过10MB限制`);
+            input.value = '';
+            return;
+        }
+    }
+    
+    // 添加文件
+    uploadedFiles[type] = [...currentFiles, ...files];
+    
+    // 显示文件列表
+    displayMaterialFileList(type);
+    
+    input.value = '';
+}
+
+// 显示材料文件列表
+function displayMaterialFileList(type) {
+    const listContainer = document.getElementById(type.toLowerCase() + 'FileList');
+    const files = uploadedFiles[type] || [];
+    
+    listContainer.innerHTML = '';
+    
+    files.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item-mini';
+        fileItem.innerHTML = `
+            <span class="file-name" title="${file.name}">${file.name}</span>
+            <span class="file-remove" onclick="removeMaterialFile('${type}', ${index})">×</span>
+        `;
+        listContainer.appendChild(fileItem);
+    });
+}
+
+// 删除材料文件
+function removeMaterialFile(type, index) {
+    uploadedFiles[type].splice(index, 1);
+    displayMaterialFileList(type);
 }
 
 // 删除文件

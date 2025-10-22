@@ -362,27 +362,42 @@
                         <input type="date" id="detail_exportReleaseDate" class="form-control" disabled>
                         <span id="detail_exportReleaseDate_display"></span>
                     </div>
-                    <div class="detail-info-item full-width" id="exportDraftDocSection">
-                        <label>出口报关资料（草稿资料）：</label>
+                    <!-- 第一行: 报关草单、CI、PL、DN -->
+                    <div class="detail-info-item" id="exportDraftDocSection">
+                        <label>报关草单：</label>
                         <div class="file-upload-area">
                             <input type="file" id="detail_exportDraftDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'exportDraft', 10)">
-                            <button class="btn btn-default" id="exportDraftUploadBtn" onclick="document.getElementById('detail_exportDraftDocs').click()" disabled>
-                                选择文件
+                            <button class="btn btn-sm btn-default btn-upload" id="exportDraftUploadBtn" onclick="document.getElementById('detail_exportDraftDocs').click()" disabled>
+                                上传文件
                             </button>
-                            <span class="file-hint">请上传报关草单，最多5个文件，每个不超过10MB</span>
+                            <span class="file-hint">最多5个文件，每个不超过10MB</span>
                             <div id="exportDraftFileList" class="file-list"></div>
                         </div>
                     </div>
-                    <div class="detail-info-item full-width" id="exportDocSection">
-                        <label>出口报关资料（正式文件）：</label>
-                        <div class="file-upload-area">
-                            <input type="file" id="detail_exportDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'export', 10)">
-                            <button class="btn btn-default" id="exportUploadBtn" onclick="document.getElementById('detail_exportDocs').click()">
-                                选择文件
-                            </button>
-                            <span class="file-hint">最多10个文件，每个不超过10MB</span>
-                            <div id="exportFileList" class="file-list"></div>
-                        </div>
+                    <div class="detail-info-item">
+                        <label>CI：</label>
+                        <input type="file" id="upload_ci" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx,.xls" style="display: none;" onchange="handleMaterialFileUpload(this, 'CI', 5)">
+                        <button class="btn btn-sm btn-default btn-upload" onclick="document.getElementById('upload_ci').click()">上传文件</button>
+                        <div id="ciFileList" class="file-list-mini"></div>
+                        <a href="javascript:void(0)" class="download-link" id="download_ci" onclick="downloadFile('CI')">在线导出</a>
+                    </div>
+                    <div class="detail-info-item">
+                        <label>PL：</label>
+                        <input type="file" id="upload_pl" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xlsx,.xls" style="display: none;" onchange="handleMaterialFileUpload(this, 'PL', 5)">
+                        <button class="btn btn-sm btn-default btn-upload" onclick="document.getElementById('upload_pl').click()">上传文件</button>
+                        <div id="plFileList" class="file-list-mini"></div>
+                        <a href="javascript:void(0)" class="download-link" id="download_pl" onclick="downloadFile('PL')">在线导出</a>
+                    </div>
+                    <div class="detail-info-item" id="dnInvoiceSection">
+                        <label>DN开票状态：</label>
+                        <span id="detail_dnInvoiceStatus"></span>
+                        <a href="javascript:void(0)" class="download-link" id="download_dn" onclick="downloadFile('DN')">在线导出</a>
+                    </div>
+                    <!-- 第二行: VAT、进口查验预警、进口放行日期、出口报关资料（正式文件） -->
+                    <div class="detail-info-item" id="vatInvoiceSection">
+                        <label>VAT开票状态：</label>
+                        <span id="detail_vatInvoiceStatus"></span>
+                        <a href="javascript:void(0)" class="download-link" id="download_vat" onclick="downloadFile('VAT')">在线导出</a>
                     </div>
                     <div class="detail-info-item" id="importWarningSection">
                         <label>进口查验预警：</label>
@@ -398,6 +413,17 @@
                         <label>进口放行日期：</label>
                         <input type="date" id="detail_importReleaseDate" class="form-control" disabled>
                         <span id="detail_importReleaseDate_display"></span>
+                    </div>
+                    <div class="detail-info-item" id="exportDocSection">
+                        <label>出口报关资料（正式文件）：</label>
+                        <div class="file-upload-area">
+                            <input type="file" id="detail_exportDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'export', 10)">
+                            <button class="btn btn-sm btn-default btn-upload" id="exportUploadBtn" onclick="document.getElementById('detail_exportDocs').click()">
+                                上传文件
+                            </button>
+                            <span class="file-hint">最多5个文件，每个不超过10MB</span>
+                            <div id="exportFileList" class="file-list"></div>
+                        </div>
                     </div>
                 </div>
             </div>
