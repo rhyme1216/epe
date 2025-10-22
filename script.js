@@ -508,8 +508,8 @@ function generateCustomsData() {
                         '进口报关中', '进口查验中', '进口已放行'];
     const warnings = ['red', 'yellow', 'green', 'null'];
     const warningNames = ['红灯', '黄灯', '绿灯', 'NULL'];
-    const invoiceStatuses = ['not-invoiced', 'data-error', 'invoiced'];
-    const invoiceStatusNames = ['未开票', '开票数据错误', '已开票'];
+    const invoiceStatuses = ['not-invoiced', 'data-error', 'draft-invoiced', 'formal-invoiced'];
+    const invoiceStatusNames = ['未开票', '开票数据错误', '已开草稿票', '已开正式票'];
     const updaters = ['张三', '李四', '王五', '赵六', '钱七'];
     
     customsData = [];

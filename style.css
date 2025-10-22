@@ -656,7 +656,12 @@ body {
     color: #f5222d;
 }
 
-.invoice-invoiced {
+.invoice-draft-invoiced {
+    background-color: #e6f7ff;
+    color: #1890ff;
+}
+
+.invoice-formal-invoiced {
     background-color: #f6ffed;
     color: #52c41a;
 }
