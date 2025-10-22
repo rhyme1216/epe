@@ -20,24 +20,25 @@ body {
 /* 侧边栏样式 */
 .sidebar {
     width: 200px;
-    background-color: #001529;
-    color: #fff;
+    background-color: #ffffff;
+    color: #333;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     transition: width 0.3s;
+    border-right: 1px solid #e8e8e8;
 }
 
 .sidebar-header {
     padding: 20px 16px;
-    background-color: #002140;
-    border-bottom: 1px solid #002140;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e8e8e8;
 }
 
 .sidebar-header h2 {
     font-size: 16px;
     font-weight: 500;
-    color: #fff;
+    color: #333;
 }
 
 .sidebar-nav {
@@ -59,11 +60,11 @@ body {
     padding: 12px 16px;
     cursor: pointer;
     transition: background-color 0.3s;
-    color: rgba(255, 255, 255, 0.85);
+    color: #333;
 }
 
 .menu-title:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: #f5f5f5;
 }
 
 .menu-icon {
@@ -89,7 +90,7 @@ body {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-in-out;
-    background-color: #000c17;
+    background-color: #fafafa;
 }
 
 .menu-item.active .submenu {
@@ -99,18 +100,18 @@ body {
 .submenu-item {
     padding: 10px 16px 10px 48px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.65);
+    color: #666;
     transition: all 0.3s;
 }
 
 .submenu-item:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background-color: #f0f0f0;
+    color: #333;
 }
 
 .submenu-item.active {
-    background-color: #1890ff;
-    color: #fff;
+    background-color: #e6f7ff;
+    color: #1890ff;
 }
 
 /* 主内容区样式 */
@@ -118,7 +119,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
     background-color: #f0f2f5;
 }
 
@@ -378,9 +379,11 @@ body {
 }
 
 
-/* 固定最后一列（操作） */
-.data-table th:last-child,
-.data-table td:last-child {
+/* 固定最后一列（操作） - 仅在主列表生效 */
+#dataTable th:last-child,
+#dataTable td:last-child,
+#customsDataTable th:last-child,
+#customsDataTable td:last-child {
     position: sticky;
     right: 0;
     z-index: 9;
@@ -389,7 +392,8 @@ body {
     white-space: normal;
 }
 
-.data-table th:last-child {
+#dataTable th:last-child,
+#customsDataTable th:last-child {
     z-index: 11;
 }
 
@@ -539,10 +543,12 @@ body {
 /* 页面内容切换 */
 .page-content {
     display: none;
+    flex-direction: column;
+    height: 100%;
 }
 
 .page-content.active {
-    display: block;
+    display: flex;
 }
 
 /* 状态TAB */
@@ -629,6 +635,30 @@ body {
 .warning-null {
     background-color: #f5f5f5;
     color: #999;
+}
+
+/* 开票状态标签 */
+.invoice-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.invoice-not-invoiced {
+    background-color: #f5f5f5;
+    color: #999;
+}
+
+.invoice-data-error {
+    background-color: #fff1f0;
+    color: #f5222d;
+}
+
+.invoice-invoiced {
+    background-color: #f6ffed;
+    color: #52c41a;
 }
 
 /* 详情页面 */
@@ -775,6 +805,19 @@ body {
     color: #999;
     margin-right: 12px;
     font-size: 12px;
+}
+
+.file-download {
+    color: #1890ff;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    margin-right: 8px;
+}
+
+.file-download:hover {
+    background-color: #e6f7ff;
 }
 
 .file-remove {
@@ -1033,5 +1076,84 @@ textarea.form-control {
     resize: vertical;
     min-height: 80px;
     font-family: inherit;
+}
+
+/* 问号提示图标 */
+.tooltip-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    background-color: #1890ff;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: help;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* 导出资料弹窗样式 */
+.export-section h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: #333;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #1890ff;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.checkbox-item:hover {
+    border-color: #1890ff;
+    background-color: #f0f7ff;
+}
+
+.checkbox-item input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.checkbox-item span {
+    font-size: 14px;
+    color: #333;
+}
+
+.export-info {
+    background-color: #f5f5f5;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 16px;
+}
+
+.export-info p {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.export-info span {
+    color: #1890ff;
+    font-weight: 500;
 }
 

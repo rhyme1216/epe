@@ -11,13 +11,13 @@
         <!-- 侧边栏 -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>系统菜单</h2>
+                <h2>工采国际</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul class="menu-list">
                     <li class="menu-item">
                         <div class="menu-title" onclick="toggleSubmenu(this)">
-                            <span class="menu-icon">📋</span>
+                            <span class="menu-icon"></span>
                             <span>关务管理</span>
                             <span class="arrow">▼</span>
                         </div>
@@ -26,7 +26,7 @@
                                 越南EPE商品评估
                             </li>
                             <li class="submenu-item" onclick="loadPage('vietnam-epe-customs')">
-                                越南EPE报关管理
+                                越南报关管理
                             </li>
                         </ul>
                     </li>
@@ -39,7 +39,7 @@
             <!-- 越南EPE商品评估页面 -->
             <div id="page-evaluation" class="page-content active">
             <div class="page-header">
-                <h1>越南EPE商品评估</h1>
+                <!-- <h1>越南EPE商品评估</h1> -->
                 <div class="breadcrumb">
                     <span>关务管理</span>
                     <span class="separator">/</span>
@@ -184,20 +184,24 @@
             </div>
             </div>
 
-            <!-- 越南EPE报关管理页面 -->
+            <!-- 越南报关管理页面 -->
             <div id="page-customs" class="page-content">
             <div class="page-header">
-                <h1>越南EPE报关管理</h1>
+                <!-- <h1>越南报关管理</h1> -->
                 <div class="breadcrumb">
                     <span>关务管理</span>
                     <span class="separator">/</span>
-                    <span>越南EPE报关管理</span>
+                    <span>越南报关管理</span>
                 </div>
             </div>
 
             <!-- 状态TAB -->
             <div class="status-tabs">
-                <div class="tab-item active" data-status="export-pre" onclick="switchCustomsTab(this, 'export-pre')">
+                <div class="tab-item active" data-status="all" onclick="switchCustomsTab(this, 'all')">
+                    <span>全部</span>
+                    <span class="badge" id="badge-all">100</span>
+                </div>
+                <div class="tab-item" data-status="export-pre" onclick="switchCustomsTab(this, 'export-pre')">
                     <span>出口预报关</span>
                     <span class="badge" id="badge-export-pre">12</span>
                 </div>
@@ -217,9 +221,9 @@
                     <span>出口已放行</span>
                     <span class="badge" id="badge-export-released">23</span>
                 </div>
-                <div class="tab-item" data-status="import-pending" onclick="switchCustomsTab(this, 'import-pending')">
-                    <span>进口待报关</span>
-                    <span class="badge" id="badge-import-pending">6</span>
+                <div class="tab-item" data-status="import-declaring" onclick="switchCustomsTab(this, 'import-declaring')">
+                    <span>进口报关中</span>
+                    <span class="badge" id="badge-import-declaring">6</span>
                 </div>
                 <div class="tab-item" data-status="import-inspecting" onclick="switchCustomsTab(this, 'import-inspecting')">
                     <span>进口查验中</span>
@@ -269,10 +273,10 @@
             </div>
 
             <!-- 操作按钮区域 -->
-            <div class="toolbar">
-                <div class="toolbar-left">
-                    <button class="btn btn-success" onclick="handleCustomsExport()">导出</button>
-                </div>
+            <div class="table-actions" style="margin: 0 24px 15px 24px;">
+                <button id="exportMaterialBtn" class="btn btn-primary" onclick="handleExportMaterial()" style="display: inline-block;">
+                    导出资料
+                </button>
             </div>
 
             <!-- 数据列表 -->
@@ -280,8 +284,13 @@
                 <table class="data-table" id="customsDataTable">
                     <thead>
                         <tr>
+                            <th class="checkbox-col">
+                                <!-- 单选模式,不显示全选框 -->
+                            </th>
                             <th>批次号</th>
                             <th>报关状态</th>
+                            <th>VAT开票状态</th>
+                            <th>DN开票状态</th>
                             <th>查验预警</th>
                             <th>出口放行日期</th>
                             <th>进口放行日期</th>
@@ -352,14 +361,25 @@
                         <input type="date" id="detail_exportReleaseDate" class="form-control" disabled>
                         <span id="detail_exportReleaseDate_display"></span>
                     </div>
-                    <div class="detail-info-item full-width" id="exportDocSection">
-                        <label>出口报关单：</label>
+                    <div class="detail-info-item full-width" id="exportDraftDocSection">
+                        <label>出口报关资料（草稿资料）：</label>
                         <div class="file-upload-area">
-                            <input type="file" id="detail_exportDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'export', 5)">
-                            <button class="btn btn-default" id="exportUploadBtn" onclick="document.getElementById('detail_exportDocs').click()" disabled>
+                            <input type="file" id="detail_exportDraftDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'exportDraft', 10)">
+                            <button class="btn btn-default" id="exportDraftUploadBtn" onclick="document.getElementById('detail_exportDraftDocs').click()" disabled>
                                 选择文件
                             </button>
-                            <span class="file-hint">最多5个文件，每个不超过10MB</span>
+                            <span class="file-hint">请上传报关草单，最多5个文件，每个不超过10MB</span>
+                            <div id="exportDraftFileList" class="file-list"></div>
+                        </div>
+                    </div>
+                    <div class="detail-info-item full-width" id="exportDocSection">
+                        <label>出口报关资料（正式文件）：</label>
+                        <div class="file-upload-area">
+                            <input type="file" id="detail_exportDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'export', 10)">
+                            <button class="btn btn-default" id="exportUploadBtn" onclick="document.getElementById('detail_exportDocs').click()">
+                                选择文件
+                            </button>
+                            <span class="file-hint">最多10个文件，每个不超过10MB</span>
                             <div id="exportFileList" class="file-list"></div>
                         </div>
                     </div>
@@ -377,17 +397,6 @@
                         <label>进口放行日期：</label>
                         <input type="date" id="detail_importReleaseDate" class="form-control" disabled>
                         <span id="detail_importReleaseDate_display"></span>
-                    </div>
-                    <div class="detail-info-item full-width" id="importDocSection">
-                        <label>进口报关资料：</label>
-                        <div class="file-upload-area">
-                            <input type="file" id="detail_importDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'import', 15)">
-                            <button class="btn btn-default" id="importUploadBtn" onclick="document.getElementById('detail_importDocs').click()" disabled>
-                                选择文件
-                            </button>
-                            <span class="file-hint">请上传CI/PL/报关单，最多15个文件，每个不超过10MB</span>
-                            <div id="importFileList" class="file-list"></div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -410,10 +419,14 @@
                                 <th>销售单位越南语</th>
                                 <th>成交单价VND</th>
                                 <th>成交数量</th>
+                                <th>
+                                    商品净重（KG）
+                                    <span class="tooltip-icon" title="商品毛重*0.8">?</span>
+                                </th>
                                 <th>原产国</th>
                                 <th>包装编号</th>
-                                <th>包装毛重</th>
-                                <th>车牌号</th>
+                                <th>包装毛重（KG）</th>
+                                <th>下单人</th>
                             </tr>
                         </thead>
                         <tbody id="detailProductTableBody">
@@ -500,6 +513,46 @@
                 <button class="btn btn-default" onclick="closeAssessmentModal()">取消</button>
                 <button class="btn btn-primary" onclick="submitAssessment()">提交评估</button>
                 <button class="btn btn-success" onclick="confirmAssessment()">确认评估</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出资料弹窗 -->
+    <div id="exportMaterialModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>导出资料</h2>
+                <span class="close" onclick="closeExportMaterialModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="export-section">
+                    <h3>选择导出明细</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="export_ci" checked>
+                            <span>CI</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="export_pl" checked>
+                            <span>PL</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="export_dn" checked>
+                            <span>DN</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="export_vat" checked>
+                            <span>VAT</span>
+                        </label>
+                    </div>
+                    <div class="export-info">
+                        <p>已选择批次：<span id="exportBatchInfo"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeExportMaterialModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmExportMaterial()">确认导出</button>
             </div>
         </div>
     </div>

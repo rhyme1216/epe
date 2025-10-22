@@ -12,10 +12,10 @@ let customsCurrentPage = 1;
 let customsPageSize = 20;
 let customsTotalRecords = 0;
 let customsFilteredData = [];
-let currentCustomsStatus = 'export-pre'; // 当前选中的报关状态
+let currentCustomsStatus = 'all'; // 当前选中的报关状态，默认为全部
 let currentCustomsDetail = null; // 当前查看详情的报关单
 let currentActionType = ''; // 当前操作类型
-let uploadedFiles = { export: [], import: [] }; // 已上传的文件
+let uploadedFiles = { exportDraft: [], export: [] }; // 已上传的文件
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
@@ -503,11 +503,13 @@ function generateExcelTemplate(items) {
 // 生成报关管理模拟数据
 function generateCustomsData() {
     const statuses = ['export-pre', 'export-pending', 'export-declaring', 'export-inspecting', 'export-released', 
-                     'import-pending', 'import-inspecting', 'import-released'];
+                     'import-declaring', 'import-inspecting', 'import-released'];
     const statusNames = ['出口预报关', '出口待报关', '出口报关中', '出口查验中', '出口已放行', 
-                        '进口待报关', '进口查验中', '进口已放行'];
+                        '进口报关中', '进口查验中', '进口已放行'];
     const warnings = ['red', 'yellow', 'green', 'null'];
     const warningNames = ['红灯', '黄灯', '绿灯', 'NULL'];
+    const invoiceStatuses = ['not-invoiced', 'data-error', 'invoiced'];
+    const invoiceStatusNames = ['未开票', '开票数据错误', '已开票'];
     const updaters = ['张三', '李四', '王五', '赵六', '钱七'];
     
     customsData = [];
@@ -515,6 +517,8 @@ function generateCustomsData() {
     for (let i = 1; i <= 100; i++) {
         const statusIndex = Math.floor(Math.random() * statuses.length);
         const warningIndex = Math.floor(Math.random() * warnings.length);
+        const vatInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
+        const dnInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
         const status = statuses[statusIndex];
         const isExport = status.startsWith('export');
         
@@ -525,11 +529,22 @@ function generateCustomsData() {
         let exportReleaseDate = '';
         let importReleaseDate = '';
         
+        // 出口已放行状态：有出口放行日期
         if (status === 'export-released') {
             exportReleaseDate = formatDate(updateTime);
         }
-        if (status === 'import-released') {
-            importReleaseDate = formatDate(updateTime);
+        
+        // 进口状态（import-declaring, import-inspecting, import-released）：
+        // 必须先有出口放行日期，才能有进口相关数据
+        if (status.startsWith('import-')) {
+            // 进口状态必须有出口放行日期（比当前时间早一些）
+            const exportDate = new Date(updateTime.getTime() - Math.random() * 10 * 24 * 60 * 60 * 1000);
+            exportReleaseDate = formatDate(exportDate);
+            
+            // 如果是进口已放行，还需要有进口放行日期
+            if (status === 'import-released') {
+                importReleaseDate = formatDate(updateTime);
+            }
         }
         
         customsData.push({
@@ -538,6 +553,10 @@ function generateCustomsData() {
             customerCode: `CUST${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,
             status: status,
             statusName: statusNames[statusIndex],
+            vatInvoiceStatus: invoiceStatuses[vatInvoiceStatusIndex],
+            vatInvoiceStatusName: invoiceStatusNames[vatInvoiceStatusIndex],
+            dnInvoiceStatus: invoiceStatuses[dnInvoiceStatusIndex],
+            dnInvoiceStatusName: invoiceStatusNames[dnInvoiceStatusIndex],
             warning: warnings[warningIndex],
             warningName: warningNames[warningIndex],
             exportWarning: isExport && Math.random() > 0.3 ? warnings[warningIndex] : '',
@@ -579,7 +598,13 @@ function switchCustomsTab(element, status) {
 
 // 根据状态过滤数据
 function filterCustomsDataByStatus(status) {
-    customsFilteredData = customsData.filter(item => item.status === status);
+    if (status === 'all') {
+        // 全部状态，显示所有数据
+        customsFilteredData = [...customsData];
+    } else {
+        // 按指定状态过滤
+        customsFilteredData = customsData.filter(item => item.status === status);
+    }
     customsTotalRecords = customsFilteredData.length;
     customsCurrentPage = 1;
     
@@ -592,8 +617,15 @@ function filterCustomsDataByStatus(status) {
 // 更新状态徽标数字
 function updateCustomsStatusBadges() {
     const statuses = ['export-pre', 'export-pending', 'export-declaring', 'export-inspecting', 'export-released', 
-                     'import-pending', 'import-inspecting', 'import-released'];
+                     'import-declaring', 'import-inspecting', 'import-released'];
     
+    // 更新全部TAB的徽标
+    const allBadge = document.getElementById('badge-all');
+    if (allBadge) {
+        allBadge.textContent = customsData.length;
+    }
+    
+    // 更新各状态TAB的徽标
     statuses.forEach(status => {
         const count = customsData.filter(item => item.status === status).length;
         const badge = document.getElementById(`badge-${status}`);
@@ -619,15 +651,18 @@ function renderCustomsTable() {
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
     
     pageData.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td><input type="checkbox" class="customs-row-checkbox" value="${item.id}" data-status="${item.status}" onchange="updateCustomsSelectedCount()"></td>
             <td>${item.batchNo}</td>
             <td>${item.statusName}</td>
+            <td><span class="invoice-badge invoice-${item.vatInvoiceStatus}">${item.vatInvoiceStatusName}</span></td>
+            <td><span class="invoice-badge invoice-${item.dnInvoiceStatus}">${item.dnInvoiceStatusName}</span></td>
             <td><span class="warning-badge warning-${item.warning}">${item.warningName}</span></td>
             <td>${item.exportReleaseDate || '-'}</td>
             <td>${item.importReleaseDate || '-'}</td>
@@ -643,6 +678,11 @@ function renderCustomsTable() {
     // 更新分页信息
     document.getElementById('customsTotalRecords').textContent = customsTotalRecords;
     document.getElementById('customsCurrentPage').value = customsCurrentPage;
+    
+    // 更新全选复选框状态
+    updateCustomsCheckAllState();
+    // 更新选中计数
+    updateCustomsSelectedCount();
     
     // 更新当前页码输入框事件监听
     const pageInput = document.getElementById('customsCurrentPage');
@@ -719,25 +759,26 @@ function getCustomsActionButtons(item) {
             `;
             break;
         case 'export-released':
-            // 出口已放行：取消确认、详情
+            // 出口已放行：进口报关、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
+                        <button class="action-btn" onclick="handleImportDeclaration(${item.id})">进口报关</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
-        case 'import-pending':
-            // 进口待报关：海关查验、海关放行、详情
+        case 'import-declaring':
+            // 进口报关中：取消确认、海关查验、海关放行、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="handleCancelImportConfirm(${item.id})">取消确认</button>
                         <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
-                        <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
                     </div>
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
@@ -812,7 +853,8 @@ function handleCustomsReset() {
 
 // 报关导出
 function handleCustomsExport() {
-    alert(`导出功能：将导出当前${customsFilteredData[0]?.statusName || ''}状态的所有数据\n共 ${customsFilteredData.length} 条记录`);
+    const statusText = currentCustomsStatus === 'all' ? '全部' : (customsFilteredData[0]?.statusName || '');
+    alert(`导出功能：将导出当前${statusText}状态的所有数据\n共 ${customsFilteredData.length} 条记录`);
     console.log('导出数据：', customsFilteredData);
 }
 
@@ -839,10 +881,18 @@ function handleCustomsPageSizeChange() {
 // 确认报关
 function handleConfirmDeclaration(id) {
     const item = customsData.find(d => d.id === id);
-    if (confirm(`确认对批次号 ${item.batchNo} 进行报关确认？`)) {
-        alert(`确认报关成功！\n批次号：${item.batchNo}`);
-        console.log('确认报关：', item);
-    }
+    if (!item) return;
+    
+    currentCustomsDetail = item;
+    currentActionType = 'confirmDeclaration';
+    
+    showCustomsDetail(item);
+    
+    // 启用草稿资料上传
+    document.getElementById('exportDraftUploadBtn').disabled = false;
+    
+    // 显示保存按钮
+    document.getElementById('saveDetailBtn').style.display = 'inline-block';
 }
 
 // 取消确认
@@ -851,6 +901,39 @@ function handleCancelConfirm(id) {
     if (confirm(`确认取消批次号 ${item.batchNo} 的确认操作？`)) {
         alert(`取消确认成功！\n批次号：${item.batchNo}`);
         console.log('取消确认：', item);
+    }
+}
+
+// 进口报关
+function handleImportDeclaration(id) {
+    const item = customsData.find(d => d.id === id);
+    
+    // 验证是否已有出口放行日期
+    if (!item.exportReleaseDate) {
+        alert(`进口报关前，必须先完成出口海关放行！\n批次号：${item.batchNo}\n当前状态：${item.statusName}\n\n请先完成出口海关放行操作，填写出口放行日期后，才能进行进口报关。`);
+        return;
+    }
+    
+    if (confirm(`确认对批次号 ${item.batchNo} 进行进口报关？\n出口放行日期：${item.exportReleaseDate}`)) {
+        alert(`进口报关成功！\n批次号：${item.batchNo}\n状态已变更为：进口报关中`);
+        console.log('进口报关：', item);
+        // 实际项目中应该调用API更新状态
+        // item.status = 'import-declaring';
+        // item.statusName = '进口报关中';
+        // renderCustomsTable();
+    }
+}
+
+// 取消进口确认
+function handleCancelImportConfirm(id) {
+    const item = customsData.find(d => d.id === id);
+    if (confirm(`确认取消批次号 ${item.batchNo} 的进口确认操作？\n将回退至出口已放行状态`)) {
+        alert(`取消进口确认成功！\n批次号：${item.batchNo}\n状态已回退至：出口已放行`);
+        console.log('取消进口确认：', item);
+        // 实际项目中应该调用API更新状态
+        // item.status = 'export-released';
+        // item.statusName = '出口已放行';
+        // renderCustomsTable();
     }
 }
 
@@ -891,19 +974,17 @@ function handleCustomsRelease(id) {
     
     showCustomsDetail(item);
     
-    // 启用对应的放行日期和文件上传
+    // 启用对应的放行日期
     const isExport = item.status.startsWith('export');
     
     if (isExport) {
         document.getElementById('detail_exportReleaseDate').disabled = false;
         document.getElementById('detail_exportReleaseDate').style.display = 'block';
         document.getElementById('detail_exportReleaseDate_display').style.display = 'none';
-        document.getElementById('exportUploadBtn').disabled = false;
     } else {
         document.getElementById('detail_importReleaseDate').disabled = false;
         document.getElementById('detail_importReleaseDate').style.display = 'block';
         document.getElementById('detail_importReleaseDate_display').style.display = 'none';
-        document.getElementById('importUploadBtn').disabled = false;
     }
     
     // 显示保存按钮
@@ -931,69 +1012,73 @@ function showCustomsDetail(item) {
     statusSpan.textContent = item.statusName;
     statusSpan.className = 'status-badge';
     
-    // 根据状态决定字段的显示和编辑状态
-    const isExport = item.status.startsWith('export');
-    const isImport = item.status.startsWith('import');
-    
-    // 出口相关字段
+    // 【详情】页展示所有进出口信息，默认都显示且不可编辑
+    // 出口相关字段 - 始终显示
+    const exportDraftDocSection = document.getElementById('exportDraftDocSection');
     const exportWarningSection = document.getElementById('exportWarningSection');
     const exportReleaseDateSection = document.getElementById('exportReleaseDateSection');
     const exportDocSection = document.getElementById('exportDocSection');
     
-    if (isExport) {
-        exportWarningSection.style.display = 'flex';
-        exportReleaseDateSection.style.display = 'flex';
-        exportDocSection.style.display = 'flex';
-        
-        // 显示查验预警
-        if (item.exportWarning) {
-            document.getElementById('detail_exportWarning_display').innerHTML = 
-                `<span class="warning-badge warning-${item.exportWarning}">${getWarningName(item.exportWarning)}</span>`;
-            document.getElementById('detail_exportWarning_display').style.display = 'inline-block';
-            document.getElementById('detail_exportWarning').style.display = 'none';
-        }
-        
-        // 显示放行日期
-        if (item.exportReleaseDate) {
-            document.getElementById('detail_exportReleaseDate_display').textContent = item.exportReleaseDate;
-            document.getElementById('detail_exportReleaseDate_display').style.display = 'inline-block';
-            document.getElementById('detail_exportReleaseDate').style.display = 'none';
-        }
+    exportDraftDocSection.style.display = 'flex';
+    exportWarningSection.style.display = 'flex';
+    exportReleaseDateSection.style.display = 'flex';
+    exportDocSection.style.display = 'flex';
+    
+    // 重置所有字段为禁用状态
+    document.getElementById('exportDraftUploadBtn').disabled = true;
+    document.getElementById('detail_exportWarning').disabled = true;
+    document.getElementById('detail_exportWarning').style.display = 'none';
+    document.getElementById('detail_exportReleaseDate').disabled = true;
+    document.getElementById('detail_exportReleaseDate').style.display = 'none';
+    
+    // 显示出口查验预警
+    if (item.exportWarning) {
+        document.getElementById('detail_exportWarning_display').innerHTML = 
+            `<span class="warning-badge warning-${item.exportWarning}">${getWarningName(item.exportWarning)}</span>`;
+        document.getElementById('detail_exportWarning_display').style.display = 'inline-block';
     } else {
-        exportWarningSection.style.display = 'none';
-        exportReleaseDateSection.style.display = 'none';
-        exportDocSection.style.display = 'none';
+        document.getElementById('detail_exportWarning_display').textContent = '-';
+        document.getElementById('detail_exportWarning_display').style.display = 'inline-block';
     }
     
-    // 进口相关字段
+    // 显示出口放行日期
+    if (item.exportReleaseDate) {
+        document.getElementById('detail_exportReleaseDate_display').textContent = item.exportReleaseDate;
+    } else {
+        document.getElementById('detail_exportReleaseDate_display').textContent = '-';
+    }
+    document.getElementById('detail_exportReleaseDate_display').style.display = 'inline-block';
+    
+    // 进口相关字段 - 始终显示
     const importWarningSection = document.getElementById('importWarningSection');
     const importReleaseDateSection = document.getElementById('importReleaseDateSection');
-    const importDocSection = document.getElementById('importDocSection');
     
-    if (isImport) {
-        importWarningSection.style.display = 'flex';
-        importReleaseDateSection.style.display = 'flex';
-        importDocSection.style.display = 'flex';
-        
-        // 显示查验预警
-        if (item.importWarning) {
-            document.getElementById('detail_importWarning_display').innerHTML = 
-                `<span class="warning-badge warning-${item.importWarning}">${getWarningName(item.importWarning)}</span>`;
-            document.getElementById('detail_importWarning_display').style.display = 'inline-block';
-            document.getElementById('detail_importWarning').style.display = 'none';
-        }
-        
-        // 显示放行日期
-        if (item.importReleaseDate) {
-            document.getElementById('detail_importReleaseDate_display').textContent = item.importReleaseDate;
-            document.getElementById('detail_importReleaseDate_display').style.display = 'inline-block';
-            document.getElementById('detail_importReleaseDate').style.display = 'none';
-        }
+    importWarningSection.style.display = 'flex';
+    importReleaseDateSection.style.display = 'flex';
+    
+    // 重置进口字段为禁用状态
+    document.getElementById('detail_importWarning').disabled = true;
+    document.getElementById('detail_importWarning').style.display = 'none';
+    document.getElementById('detail_importReleaseDate').disabled = true;
+    document.getElementById('detail_importReleaseDate').style.display = 'none';
+    
+    // 显示进口查验预警
+    if (item.importWarning) {
+        document.getElementById('detail_importWarning_display').innerHTML = 
+            `<span class="warning-badge warning-${item.importWarning}">${getWarningName(item.importWarning)}</span>`;
+        document.getElementById('detail_importWarning_display').style.display = 'inline-block';
     } else {
-        importWarningSection.style.display = 'none';
-        importReleaseDateSection.style.display = 'none';
-        importDocSection.style.display = 'none';
+        document.getElementById('detail_importWarning_display').textContent = '-';
+        document.getElementById('detail_importWarning_display').style.display = 'inline-block';
     }
+    
+    // 显示进口放行日期
+    if (item.importReleaseDate) {
+        document.getElementById('detail_importReleaseDate_display').textContent = item.importReleaseDate;
+    } else {
+        document.getElementById('detail_importReleaseDate_display').textContent = '-';
+    }
+    document.getElementById('detail_importReleaseDate_display').style.display = 'inline-block';
     
     // 生成商品列表
     generateDetailProductList(item);
@@ -1018,9 +1103,12 @@ function generateDetailProductList(item) {
     
     // 生成5-10条商品数据
     const productCount = 5 + Math.floor(Math.random() * 6);
+    const orderPersons = ['张三', '李四', '王五', '赵六', '钱七'];
     
     for (let i = 1; i <= productCount; i++) {
         const canEdit = item.status === 'export-pending' || item.status === 'export-pre';
+        const grossWeight = (10 + Math.random() * 50).toFixed(2);
+        const netWeight = (grossWeight * 0.8).toFixed(2);
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${i}</td>
@@ -1036,10 +1124,11 @@ function generateDetailProductList(item) {
             <td>cái</td>
             <td>${(50000 + Math.random() * 100000).toFixed(2)}</td>
             <td>${Math.floor(Math.random() * 100) + 10}</td>
+            <td>${netWeight}</td>
             <td>${Math.random() > 0.5 ? '中国' : '越南'}</td>
             <td>PKG${30000 + i}</td>
-            <td>${(10 + Math.random() * 50).toFixed(2)} kg</td>
-            <td>29A-${10000 + i}</td>
+            <td>${grossWeight}</td>
+            <td>${orderPersons[Math.floor(Math.random() * orderPersons.length)]}</td>
         `;
         tableBody.appendChild(row);
     }
@@ -1050,11 +1139,11 @@ function closeCustomsDetail() {
     document.getElementById('customsDetailPage').classList.remove('show');
     currentCustomsDetail = null;
     currentActionType = '';
-    uploadedFiles = { export: [], import: [] };
+    uploadedFiles = { exportDraft: [], export: [] };
     
     // 清空文件列表
+    document.getElementById('exportDraftFileList').innerHTML = '';
     document.getElementById('exportFileList').innerHTML = '';
-    document.getElementById('importFileList').innerHTML = '';
     
     // 重置表单
     document.getElementById('detail_exportWarning').value = '';
@@ -1107,6 +1196,7 @@ function displayFileList(type) {
         fileItem.innerHTML = `
             <span class="file-name" title="${file.name}">${file.name}</span>
             <span class="file-size">${formatFileSize(file.size)}</span>
+            <span class="file-download" onclick="downloadFile('${type}', ${index})" title="下载">下载</span>
             <span class="file-remove" onclick="removeFile('${type}', ${index})">删除</span>
         `;
         listContainer.appendChild(fileItem);
@@ -1117,6 +1207,28 @@ function displayFileList(type) {
 function removeFile(type, index) {
     uploadedFiles[type].splice(index, 1);
     displayFileList(type);
+}
+
+// 下载文件
+function downloadFile(type, index) {
+    const file = uploadedFiles[type][index];
+    if (!file) return;
+    
+    // 创建下载链接
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // 释放URL对象
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    
+    console.log(`下载文件: ${file.name}`);
 }
 
 // 格式化文件大小
@@ -1133,8 +1245,17 @@ function saveCustomsDetail() {
     if (!currentCustomsDetail) return;
     
     // 根据操作类型进行不同的验证和保存
-    if (currentActionType === 'inspection') {
-        // 海关查验
+    if (currentActionType === 'confirmDeclaration') {
+        // 出口【确认报关】：出口报关资料（草稿资料）必填
+        if (uploadedFiles.exportDraft.length === 0) {
+            alert('请上传出口报关资料（草稿资料）\n请上传报关草单');
+            return;
+        }
+        
+        alert(`确认报关成功！\n批次号：${currentCustomsDetail.batchNo}\n已上传草稿资料：${uploadedFiles.exportDraft.length}个文件`);
+        
+    } else if (currentActionType === 'inspection') {
+        // 海关查验：查验预警必填
         const isExport = currentCustomsDetail.status.startsWith('export');
         const warningSelect = isExport ? 
             document.getElementById('detail_exportWarning') : 
@@ -1148,91 +1269,42 @@ function saveCustomsDetail() {
         alert(`海关查验保存成功！\n批次号：${currentCustomsDetail.batchNo}\n查验预警：${getWarningName(warningSelect.value)}`);
         
     } else if (currentActionType === 'release') {
-        // 海关放行
+        // 海关放行：放行日期必填
         const isExport = currentCustomsDetail.status.startsWith('export');
         
         if (isExport) {
+            // 出口海关放行：出口放行日期必填
             const dateInput = document.getElementById('detail_exportReleaseDate');
             if (!dateInput.value) {
                 alert('请选择出口放行日期');
                 return;
             }
-            if (uploadedFiles.export.length === 0) {
-                alert('请上传出口报关单');
+            alert(`出口海关放行保存成功！\n批次号：${currentCustomsDetail.batchNo}\n出口放行日期：${dateInput.value}`);
+        } else {
+            // 进口海关放行：必须先有出口放行日期，且进口放行日期必填
+            const exportReleaseDate = currentCustomsDetail.exportReleaseDate;
+            if (!exportReleaseDate) {
+                alert('进口海关放行前，必须先完成出口海关放行！\n请确保该批次已有出口放行日期。');
                 return;
             }
-        } else {
+            
             const dateInput = document.getElementById('detail_importReleaseDate');
             if (!dateInput.value) {
                 alert('请选择进口放行日期');
                 return;
             }
-            if (uploadedFiles.import.length === 0) {
-                alert('请上传进口报关资料（CI/PL/报关单）');
+            
+            // 验证进口放行日期不能早于出口放行日期
+            if (dateInput.value < exportReleaseDate) {
+                alert(`进口放行日期不能早于出口放行日期！\n出口放行日期：${exportReleaseDate}\n请重新选择进口放行日期。`);
                 return;
             }
+            
+            alert(`进口海关放行保存成功！\n批次号：${currentCustomsDetail.batchNo}\n进口放行日期：${dateInput.value}`);
         }
-        
-        alert(`海关放行保存成功！\n批次号：${currentCustomsDetail.batchNo}`);
     }
     
     closeCustomsDetail();
-}
-
-// 修改海关查验函数，打开详情页并启用编辑
-function handleCustomsInspection(id) {
-    const item = customsData.find(d => d.id === id);
-    if (!item) return;
-    
-    currentCustomsDetail = item;
-    currentActionType = 'inspection';
-    
-    showCustomsDetail(item);
-    
-    // 启用对应的查验预警字段
-    const isExport = item.status.startsWith('export');
-    
-    if (isExport) {
-        document.getElementById('detail_exportWarning').disabled = false;
-        document.getElementById('detail_exportWarning').style.display = 'block';
-        document.getElementById('detail_exportWarning_display').style.display = 'none';
-    } else {
-        document.getElementById('detail_importWarning').disabled = false;
-        document.getElementById('detail_importWarning').style.display = 'block';
-        document.getElementById('detail_importWarning_display').style.display = 'none';
-    }
-    
-    // 显示保存按钮
-    document.getElementById('saveDetailBtn').style.display = 'inline-block';
-}
-
-// 修改海关放行函数，打开详情页并启用编辑
-function handleCustomsRelease(id) {
-    const item = customsData.find(d => d.id === id);
-    if (!item) return;
-    
-    currentCustomsDetail = item;
-    currentActionType = 'release';
-    
-    showCustomsDetail(item);
-    
-    // 启用对应的放行日期和文件上传
-    const isExport = item.status.startsWith('export');
-    
-    if (isExport) {
-        document.getElementById('detail_exportReleaseDate').disabled = false;
-        document.getElementById('detail_exportReleaseDate').style.display = 'block';
-        document.getElementById('detail_exportReleaseDate_display').style.display = 'none';
-        document.getElementById('exportUploadBtn').disabled = false;
-    } else {
-        document.getElementById('detail_importReleaseDate').disabled = false;
-        document.getElementById('detail_importReleaseDate').style.display = 'block';
-        document.getElementById('detail_importReleaseDate_display').style.display = 'none';
-        document.getElementById('importUploadBtn').disabled = false;
-    }
-    
-    // 显示保存按钮
-    document.getElementById('saveDetailBtn').style.display = 'inline-block';
 }
 
 // 分页切换
@@ -1478,3 +1550,179 @@ function handleDelete(id) {
         // renderTable();
     }
 }
+
+// ==================== 报关单列表选择框相关功能 ====================
+
+// 全选/取消全选报关单
+function toggleCustomsCheckAll(checkbox) {
+    // 单选模式下禁用全选功能
+    checkbox.checked = false;
+    return;
+}
+
+// 更新报关单全选复选框状态
+function updateCustomsCheckAllState() {
+    const checkboxes = document.querySelectorAll('.customs-row-checkbox');
+    const checkAll = document.getElementById('customsCheckAll');
+    
+    if (!checkAll || checkboxes.length === 0) {
+        if (checkAll) {
+            checkAll.checked = false;
+            checkAll.indeterminate = false;
+        }
+        return;
+    }
+    
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    
+    if (checkedCount === 0) {
+        checkAll.checked = false;
+        checkAll.indeterminate = false;
+    } else if (checkedCount === checkboxes.length) {
+        checkAll.checked = true;
+        checkAll.indeterminate = false;
+    } else {
+        checkAll.checked = false;
+        checkAll.indeterminate = true;
+    }
+}
+
+// 更新报关单选中计数
+function updateCustomsSelectedCount() {
+    const checkboxes = document.querySelectorAll('.customs-row-checkbox');
+    const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+    
+    // 实现单选：如果选中多个,只保留最后一个
+    if (checkedBoxes.length > 1) {
+        // 取消之前所有选中的,只保留当前点击的
+        const lastChecked = checkedBoxes[checkedBoxes.length - 1];
+        checkedBoxes.forEach(cb => {
+            if (cb !== lastChecked) {
+                cb.checked = false;
+            }
+        });
+    }
+    
+    updateCustomsCheckAllState();
+    
+    // 【导出资料】按钮始终显示
+    const exportMaterialBtn = document.getElementById('exportMaterialBtn');
+    if (exportMaterialBtn) {
+        exportMaterialBtn.style.display = 'inline-block';
+    }
+}
+
+// 获取报关单选中的项目ID
+function getCustomsSelectedIds() {
+    const checkboxes = document.querySelectorAll('.customs-row-checkbox:checked');
+    return Array.from(checkboxes).map(cb => parseInt(cb.value));
+}
+
+// 获取报关单选中的项目数据
+function getCustomsSelectedItems() {
+    const ids = getCustomsSelectedIds();
+    return customsData.filter(item => ids.includes(item.id));
+}
+
+// 导出资料
+function handleExportMaterial() {
+    const selectedIds = getCustomsSelectedIds();
+    if (selectedIds.length === 0) {
+        alert('请选择一条数据进行导出资料');
+        return;
+    }
+    
+    const selectedItems = getCustomsSelectedItems();
+    
+    // 显示批次信息
+    const batchNos = selectedItems.map(item => item.batchNo).join('、');
+    document.getElementById('exportBatchInfo').textContent = batchNos;
+    
+    // 重置复选框为默认全选
+    document.getElementById('export_ci').checked = true;
+    document.getElementById('export_pl').checked = true;
+    document.getElementById('export_dn').checked = true;
+    document.getElementById('export_vat').checked = true;
+    
+    // 显示弹窗
+    document.getElementById('exportMaterialModal').classList.add('show');
+}
+
+// 关闭导出资料弹窗
+function closeExportMaterialModal() {
+    document.getElementById('exportMaterialModal').classList.remove('show');
+}
+
+// 确认导出资料
+function confirmExportMaterial() {
+    const selectedItems = getCustomsSelectedItems();
+    
+    // 获取选中的导出项
+    const exportCI = document.getElementById('export_ci').checked;
+    const exportPL = document.getElementById('export_pl').checked;
+    const exportDN = document.getElementById('export_dn').checked;
+    const exportVAT = document.getElementById('export_vat').checked;
+    
+    const exportList = [];
+    if (exportCI) exportList.push('CI');
+    if (exportPL) exportList.push('PL');
+    if (exportDN) exportList.push('DN');
+    if (exportVAT) exportList.push('VAT');
+    
+    if (exportList.length === 0) {
+        alert('请至少选择一项导出明细');
+        return;
+    }
+    
+    // 验证开票状态
+    let hasError = false;
+    const errorMessages = [];
+    
+    selectedItems.forEach(item => {
+        // 检查DN开票状态
+        if (exportDN && item.dnInvoiceStatus === 'not-invoiced') {
+            errorMessages.push(`批次${item.batchNo}：DN未开票，导出失败！`);
+            hasError = true;
+        }
+        
+        // 检查VAT开票状态
+        if (exportVAT && item.vatInvoiceStatus === 'not-invoiced') {
+            errorMessages.push(`批次${item.batchNo}：VAT未开票，导出失败！`);
+            hasError = true;
+        }
+    });
+    
+    // 如果有错误，显示错误信息
+    if (hasError) {
+        alert(errorMessages.join('\n'));
+        // 注意：不影响其他文件的导出，这里可以继续导出CI和PL
+    }
+    
+    // 执行导出（包括成功的项）
+    const successItems = selectedItems.filter(item => {
+        let canExport = true;
+        if (exportDN && item.dnInvoiceStatus === 'not-invoiced') canExport = false;
+        if (exportVAT && item.vatInvoiceStatus === 'not-invoiced') canExport = false;
+        return canExport;
+    });
+    
+    if (successItems.length > 0 || exportList.some(item => item === 'CI' || item === 'PL')) {
+        const successBatchNos = successItems.map(item => item.batchNo).join('、');
+        alert(`导出资料成功！\n批次：${successBatchNos || '部分批次'}\n导出明细：${exportList.join('、')}\n\n${hasError ? '部分批次因开票状态问题导出失败，请查看上一条提示。' : ''}`);
+        console.log('导出资料：', {
+            items: successItems,
+            exportList: exportList
+        });
+    }
+    
+    // 关闭弹窗
+    closeExportMaterialModal();
+}
+
+// 点击弹窗外部关闭导出资料弹窗
+window.addEventListener('click', function(event) {
+    const exportModal = document.getElementById('exportMaterialModal');
+    if (event.target === exportModal) {
+        closeExportMaterialModal();
+    }
+});
