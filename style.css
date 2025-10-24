@@ -656,6 +656,18 @@ body {
     color: #f5222d;
 }
 
+.invoice-partial-draft {
+    background-color: #e6f7ff;
+    color: #1890ff;
+    border: 1px dashed #1890ff;
+}
+
+.invoice-partial-formal {
+    background-color: #f6ffed;
+    color: #52c41a;
+    border: 1px dashed #52c41a;
+}
+
 .invoice-draft-invoiced {
     background-color: #e6f7ff;
     color: #1890ff;

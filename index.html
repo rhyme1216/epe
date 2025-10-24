@@ -120,7 +120,7 @@
                 <div class="toolbar-left">
                     <button class="btn btn-success" onclick="handleExport()">导出</button>
                     <button class="btn btn-primary" onclick="handleBatchConfirm()">批量关务确认</button>
-                    <button class="btn btn-primary" onclick="handleBatchAssessment()">批量关务评估</button>
+                    <!-- <button class="btn btn-primary" onclick="handleBatchAssessment()">批量关务评估</button> -->
                 </div>
                 <div class="toolbar-right">
                     <span id="selectedCount" class="selected-count">已选择 <strong>0</strong> 条</span>
@@ -203,7 +203,7 @@
                     <span class="badge" id="badge-all">100</span>
                 </div>
                 <div class="tab-item" data-status="export-pre" onclick="switchCustomsTab(this, 'export-pre')">
-                    <span>出口预报关</span>
+                    <span>出口等待中</span>
                     <span class="badge" id="badge-export-pre">12</span>
                 </div>
                 <div class="tab-item" data-status="export-pending" onclick="switchCustomsTab(this, 'export-pending')">
@@ -221,6 +221,10 @@
                 <div class="tab-item" data-status="export-released" onclick="switchCustomsTab(this, 'export-released')">
                     <span>出口已放行</span>
                     <span class="badge" id="badge-export-released">23</span>
+                </div>
+                <div class="tab-item" data-status="export-waiting" onclick="switchCustomsTab(this, 'export-waiting')">
+                    <span>出口等待中</span>
+                    <span class="badge" id="badge-export-waiting">0</span>
                 </div>
                 <div class="tab-item" data-status="import-declaring" onclick="switchCustomsTab(this, 'import-declaring')">
                     <span>进口报关中</span>
@@ -289,7 +293,8 @@
                                 <!-- 单选模式,不显示全选框 -->
                             </th>
                             <th>批次号</th>
-                            <th>报关状态</th>
+                            <th>出口报关状态</th>
+                            <th>进口报关状态</th>
                             <th>VAT开票状态</th>
                             <th>DN开票状态</th>
                             <th>查验预警</th>
