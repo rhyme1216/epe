@@ -100,11 +100,11 @@
                             </select>
                         </div>
                         <div class="form-item">
-                            <label>商品类型：</label>
+                            <label>货源国：</label>
                             <select id="productType">
                                 <option value="">全部</option>
-                                <option value="cross-border">跨境</option>
-                                <option value="local">本土</option>
+                                <option value="china">中国</option>
+                                <option value="vietnam">越南</option>
                             </select>
                         </div>
                     </div>
@@ -119,11 +119,16 @@
             <div class="toolbar">
                 <div class="toolbar-left">
                     <button class="btn btn-success" onclick="handleExport()">导出</button>
-                    <button class="btn btn-primary" onclick="handleBatchConfirm()">批量关务确认</button>
                     <!-- <button class="btn btn-primary" onclick="handleBatchAssessment()">批量关务评估</button> -->
                 </div>
                 <div class="toolbar-right">
-                    <span id="selectedCount" class="selected-count">已选择 <strong>0</strong> 条</span>
+                    <span id="selectedCount" class="selected-count">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <strong>0</strong>
+                    </span>
                 </div>
             </div>
 
@@ -146,7 +151,7 @@
                             <th>销售单位中文</th>
                             <th>销售单位越南语</th>
                             <th>货品描述</th>
-                            <th>商品类型</th>
+                            <th>货源国</th>
                             <th>采销ERP</th>
                             <th>创建时间</th>
                             <th>关务评估状态</th>
@@ -156,10 +161,9 @@
                             <th>商品状态</th>
                             <th>申报要素</th>
                             <th>备注</th>
+                            <th>创建人</th>
                             <th>更新人</th>
                             <th>更新时间</th>
-                            <th>创建人</th>
-                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">

@@ -42,13 +42,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function generateMockData() {
     const statuses = ['pending', 'confirming', 'completed'];
     const statusNames = ['待评估', '待确认', '已评估'];
-    const productTypes = ['cross-border', 'local'];
-    const productTypeNames = ['跨境', '本土'];
+    const productTypes = ['china', 'vietnam'];
+    const productTypeNames = ['中国', '越南'];
     const customers = ['客户A', '客户B', '客户C', '客户D', '客户E'];
     const brands = ['品牌A', '品牌B', '品牌C', '品牌D', '品牌E'];
     const categories = ['电子产品', '日用品', '服装', '食品', '化妆品'];
     const productStatus = ['上架', '下架'];
-    const creators = ['张三', '李四', '王五', '赵六', '钱七'];
+    const creators = ['lizimeng16', 'wangwu23', 'zhaoliu18', 'zhangsan15', 'lisi20'];
     
     mockData = [];
     
@@ -159,7 +159,7 @@ function renderTable() {
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="26" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="25" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
     
@@ -172,12 +172,12 @@ function renderTable() {
             <td>${item.customerMaterialNo || '-'}</td>
             <td>${item.customerName}</td>
             <td title="${item.productNameCn}">${item.productNameCn}</td>
-            <td>${item.hsCode}</td>
+            <td><input type="text" class="editable-input" value="${item.hsCode}" onblur="updateHsCode(${item.id}, this.value)" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
             <td title="${item.productNameVn}">${item.productNameVn}</td>
             <td><img src="${item.productImage}" alt="商品图片" class="product-image" onclick="viewImage('${item.productImage}')"></td>
             <td>${item.unitCn}</td>
             <td>${item.unitVn}</td>
-            <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.description}">${item.description}</div></td>
+            <td><input type="text" class="editable-input" value="${item.description}" onblur="updateDescription(${item.id}, this.value)" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
             <td><span class="type-badge type-${item.productType}">${item.productTypeName}</span></td>
             <td>${item.erpSystem}</td>
             <td style="min-width: 160px;">${item.createTime}</td>
@@ -188,12 +188,9 @@ function renderTable() {
             <td>${item.productStatus}</td>
             <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.declarationElements}">${item.declarationElements}</div></td>
             <td title="${item.remark || '-'}">${item.remark || '-'}</td>
+            <td>${item.creator}</td>
             <td title="${item.updater}">${item.updater}</td>
             <td style="min-width: 160px;">${item.updateTime}</td>
-            <td>${item.creator}</td>
-            <td>
-                ${getActionButtons(item)}
-            </td>
         `;
         tableBody.appendChild(row);
     });
@@ -246,8 +243,44 @@ function updateCheckAllState() {
 function updateSelectedCount() {
     const checkboxes = document.querySelectorAll('.row-checkbox');
     const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-    document.getElementById('selectedCount').innerHTML = `已选择 <strong>${checkedCount}</strong> 条`;
+    document.getElementById('selectedCount').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <strong>${checkedCount}</strong>
+    `;
     updateCheckAllState();
+}
+
+// 更新HSCode
+function updateHsCode(id, newValue) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    
+    const oldValue = item.hsCode;
+    if (oldValue === newValue) return;
+    
+    item.hsCode = newValue;
+    console.log(`更新HSCode: ID=${id}, 旧值="${oldValue}", 新值="${newValue}"`);
+    
+    // 实际应用中应该调用API保存
+    // saveHsCode(id, newValue);
+}
+
+// 更新货品描述
+function updateDescription(id, newValue) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    
+    const oldValue = item.description;
+    if (oldValue === newValue) return;
+    
+    item.description = newValue;
+    console.log(`更新货品描述: ID=${id}, 旧值="${oldValue}", 新值="${newValue}"`);
+    
+    // 实际应用中应该调用API保存
+    // saveDescription(id, newValue);
 }
 
 // 获取选中的项目ID
@@ -884,11 +917,10 @@ function getCustomsActionButtons(item) {
             `;
             break;
         case 'import-released':
-            // 进口已放行：取消确认、详情
+            // 进口已放行：详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
