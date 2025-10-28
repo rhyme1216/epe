@@ -511,6 +511,8 @@ function generateCustomsData() {
     const invoiceStatuses = ['not-invoiced', 'data-error', 'partial-draft', 'partial-formal', 'draft-invoiced', 'formal-invoiced'];
     const invoiceStatusNames = ['未开票', '开票数据错误', '部分草稿票', '部分正式票', '已开草稿票', '已开正式票'];
     const updaters = ['lizimeng16', 'wangwu23', 'zhaoliu18', 'zhangsan15', 'lisi20'];
+    const exportCountries = ['china', 'vietnam'];
+    const exportCountryNames = ['中国', '越南'];
     
     customsData = [];
     
@@ -519,6 +521,7 @@ function generateCustomsData() {
         const warningIndex = Math.floor(Math.random() * warnings.length);
         const vatInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
         const dnInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
+        const exportCountryIndex = Math.floor(Math.random() * exportCountries.length);
         const status = statuses[statusIndex];
         const isExport = status.startsWith('export');
         
@@ -563,6 +566,8 @@ function generateCustomsData() {
             importWarning: !isExport && Math.random() > 0.3 ? warnings[warningIndex] : '',
             exportReleaseDate: exportReleaseDate,
             importReleaseDate: importReleaseDate,
+            exportCountry: exportCountries[exportCountryIndex],
+            exportCountryName: exportCountryNames[exportCountryIndex],
             updater: updaters[Math.floor(Math.random() * updaters.length)],
             updateTime: formatDateTime(updateTime)
         });
@@ -899,6 +904,7 @@ function handleCustomsSearch() {
     const batchNo = document.getElementById('customs_batchNo').value.trim();
     const customerCode = document.getElementById('customs_customerCode').value.trim();
     const warning = document.getElementById('customs_inspectionWarning').value;
+    const exportCountry = document.getElementById('customs_exportCountry').value;
     
     // 先根据状态过滤
     customsFilteredData = customsData.filter(item => item.status === currentCustomsStatus);
@@ -916,6 +922,10 @@ function handleCustomsSearch() {
         customsFilteredData = customsFilteredData.filter(item => item.warning === warning);
     }
     
+    if (exportCountry) {
+        customsFilteredData = customsFilteredData.filter(item => item.exportCountry === exportCountry);
+    }
+    
     customsTotalRecords = customsFilteredData.length;
     customsCurrentPage = 1;
     renderCustomsTable();
@@ -926,6 +936,7 @@ function handleCustomsReset() {
     document.getElementById('customs_batchNo').value = '';
     document.getElementById('customs_customerCode').value = '';
     document.getElementById('customs_inspectionWarning').value = '';
+    document.getElementById('customs_exportCountry').value = '';
     
     filterCustomsDataByStatus(currentCustomsStatus);
     renderCustomsTable();
