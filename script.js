@@ -159,7 +159,7 @@ function renderTable() {
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="25" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="24" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
     
@@ -186,7 +186,6 @@ function renderTable() {
             <td title="${item.brandName}">${item.brandName}</td>
             <td title="${item.category}">${item.category}</td>
             <td>${item.productStatus}</td>
-            <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.declarationElements}">${item.declarationElements}</div></td>
             <td><input type="text" class="editable-input" value="${item.remark || ''}" onblur="updateRemark(${item.id}, this.value)" placeholder="请输入备注" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
             <td>${item.creator}</td>
             <td title="${item.updater}">${item.updater}</td>
