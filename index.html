@@ -62,7 +62,14 @@
                         </div>
                         <div class="form-item">
                             <label>客户名称：</label>
-                            <input type="text" id="customerName" placeholder="请输入客户名称">
+                            <select id="customerName">
+                                <option value="">全部</option>
+                                <option value="客户A">客户A</option>
+                                <option value="客户B">客户B</option>
+                                <option value="客户C">客户C</option>
+                                <option value="客户D">客户D</option>
+                                <option value="客户E">客户E</option>
+                            </select>
                         </div>
                         <div class="form-item">
                             <label>HSCode：</label>
@@ -91,7 +98,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-item">
-                            <label>关务评估状态：</label>
+                            <label>关务评估状态（二期）：</label>
                             <select id="assessmentStatus">
                                 <option value="">全部</option>
                                 <option value="pending">待评估</option>
@@ -262,8 +269,8 @@
                             <input type="text" id="customs_batchNo" placeholder="请输入批次号">
                         </div>
                         <div class="form-item">
-                            <label>客户简码：</label>
-                            <input type="text" id="customs_customerCode" placeholder="请输入客户简码搜索" list="customerCodeList">
+                            <label>客户名称：</label>
+                            <input type="text" id="customs_customerCode" placeholder="请输入客户名称搜索" list="customerCodeList">
                             <datalist id="customerCodeList">
                                 <option value="CUST001">
                                 <option value="CUST002">
@@ -280,14 +287,6 @@
                                 <option value="yellow">黄灯</option>
                                 <option value="green">绿灯</option>
                                 <option value="null">NULL</option>
-                            </select>
-                        </div>
-                        <div class="form-item">
-                            <label>出口国：</label>
-                            <select id="customs_exportCountry">
-                                <option value="">全部</option>
-                                <option value="china">中国</option>
-                                <option value="vietnam">越南</option>
                             </select>
                         </div>
                     </div>
@@ -318,8 +317,8 @@
                             <th>批次号</th>
                             <th>出口报关状态</th>
                             <th>进口报关状态</th>
-                            <th>VAT开票状态</th>
-                            <th>DN开票状态</th>
+                            <th>VAT开票状态（二期）</th>
+                            <th>DN开票状态（二期）</th>
                             <th>查验预警</th>
                             <th>出口放行日期</th>
                             <th>进口放行日期</th>
@@ -417,13 +416,13 @@
                         <a href="javascript:void(0)" class="download-link" id="download_pl" onclick="downloadFile('PL')">在线导出</a>
                     </div>
                     <div class="detail-info-item" id="dnInvoiceSection">
-                        <label>DN开票状态：</label>
+                        <label>DN开票状态（二期，本期为DN上传）：</label>
                         <span id="detail_dnInvoiceStatus"></span>
                         <a href="javascript:void(0)" class="download-link" id="download_dn" onclick="downloadFile('DN')">在线导出</a>
                     </div>
                     <!-- 第二行: VAT、进口查验预警、进口放行日期、出口报关资料（正式文件） -->
                     <div class="detail-info-item" id="vatInvoiceSection">
-                        <label>VAT开票状态：</label>
+                        <label>VAT开票状态（二期，本期为DN上传）：</label>
                         <span id="detail_vatInvoiceStatus"></span>
                         <a href="javascript:void(0)" class="download-link" id="download_vat" onclick="downloadFile('VAT')">在线导出</a>
                     </div>
@@ -539,7 +538,7 @@
                             <span id="modal_brandName"></span>
                         </div>
                         <div class="info-item">
-                            <label>关务评估状态：</label>
+                            <label>关务评估状态（二期）：</label>
                             <span id="modal_assessmentStatus" class="status-badge"></span>
                         </div>
                         <div class="info-item">

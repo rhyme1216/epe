@@ -187,7 +187,7 @@ function renderTable() {
             <td title="${item.category}">${item.category}</td>
             <td>${item.productStatus}</td>
             <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.declarationElements}">${item.declarationElements}</div></td>
-            <td title="${item.remark || '-'}">${item.remark || '-'}</td>
+            <td><input type="text" class="editable-input" value="${item.remark || ''}" onblur="updateRemark(${item.id}, this.value)" placeholder="请输入备注" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
             <td>${item.creator}</td>
             <td title="${item.updater}">${item.updater}</td>
             <td style="min-width: 160px;">${item.updateTime}</td>
@@ -281,6 +281,21 @@ function updateDescription(id, newValue) {
     
     // 实际应用中应该调用API保存
     // saveDescription(id, newValue);
+}
+
+// 更新备注
+function updateRemark(id, newValue) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    
+    const oldValue = item.remark || '';
+    if (oldValue === newValue) return;
+    
+    item.remark = newValue;
+    console.log(`更新备注: ID=${id}, 旧值="${oldValue}", 新值="${newValue}"`);
+    
+    // 实际应用中应该调用API保存
+    // saveRemark(id, newValue);
 }
 
 // 获取选中的项目ID
@@ -936,7 +951,6 @@ function handleCustomsSearch() {
     const batchNo = document.getElementById('customs_batchNo').value.trim();
     const customerCode = document.getElementById('customs_customerCode').value.trim();
     const warning = document.getElementById('customs_inspectionWarning').value;
-    const exportCountry = document.getElementById('customs_exportCountry').value;
     
     // 先根据状态过滤
     customsFilteredData = customsData.filter(item => item.status === currentCustomsStatus);
@@ -954,10 +968,6 @@ function handleCustomsSearch() {
         customsFilteredData = customsFilteredData.filter(item => item.warning === warning);
     }
     
-    if (exportCountry) {
-        customsFilteredData = customsFilteredData.filter(item => item.exportCountry === exportCountry);
-    }
-    
     customsTotalRecords = customsFilteredData.length;
     customsCurrentPage = 1;
     renderCustomsTable();
@@ -968,7 +978,6 @@ function handleCustomsReset() {
     document.getElementById('customs_batchNo').value = '';
     document.getElementById('customs_customerCode').value = '';
     document.getElementById('customs_inspectionWarning').value = '';
-    document.getElementById('customs_exportCountry').value = '';
     
     filterCustomsDataByStatus(currentCustomsStatus);
     renderCustomsTable();
