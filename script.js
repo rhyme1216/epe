@@ -58,6 +58,19 @@ function generateMockData() {
         const hasCustomerOrder = Math.random() > 0.5;
         const hasCustomerMaterialNo = Math.random() > 0.3;
         
+        // 生成客户物料号，支持多个来源
+        let customerMaterialNo = '';
+        if (hasCustomerMaterialNo) {
+            const sources = ['wimp', '开阳', 'SAP', 'ERP'];
+            const materialCount = Math.random() > 0.7 ? 2 : 1; // 30%概率有两个料号
+            const materials = [];
+            for (let j = 0; j < materialCount; j++) {
+                const source = sources[Math.floor(Math.random() * sources.length)];
+                materials.push(`CMN${3000 + i + j}（${source}）`);
+            }
+            customerMaterialNo = materials.join('；');
+        }
+        
         const createTime = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
         const updateTime = new Date(createTime.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000);
         
@@ -67,7 +80,7 @@ function generateMockData() {
             intlMku: `MKU${2000 + i}`,
             domesticSku: `DSKU${4000 + i}`,
             domesticSkuLink: `https://www.example.com/product/${4000 + i}`,
-            customerMaterialNo: hasCustomerMaterialNo ? `CMN${3000 + i}` : '',
+            customerMaterialNo: customerMaterialNo,
             customerName: customers[Math.floor(Math.random() * customers.length)],
             productNameCn: `商品${i}`,
             hsCode: `${1000 + Math.floor(Math.random() * 9000)}.${Math.floor(Math.random() * 100)}`,
@@ -1294,17 +1307,31 @@ function generateDetailProductList(item) {
     // 生成5-10条商品数据
     const productCount = 5 + Math.floor(Math.random() * 6);
     const orderPersons = ['张三', '李四', '王五', '赵六', '钱七'];
+    const sources = ['wimp', '开阳', 'SAP', 'ERP'];
     
     for (let i = 1; i <= productCount; i++) {
         const canEdit = item.status === 'export-pending' || item.status === 'export-pre';
         const grossWeight = (10 + Math.random() * 50).toFixed(2);
         const netWeight = (grossWeight * 0.8).toFixed(2);
+        
+        // 生成客户物料号，支持多个来源
+        let customerMaterialNo = '-';
+        if (Math.random() > 0.3) {
+            const materialCount = Math.random() > 0.7 ? 2 : 1;
+            const materials = [];
+            for (let j = 0; j < materialCount; j++) {
+                const source = sources[Math.floor(Math.random() * sources.length)];
+                materials.push(`CMN${3000 + i + j}（${source}）`);
+            }
+            customerMaterialNo = materials.join('；');
+        }
+        
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${i}</td>
             <td>MKU${2000 + i}</td>
             <td>SKU${1000 + i}</td>
-            <td>${Math.random() > 0.3 ? 'CMN' + (3000 + i) : '-'}</td>
+            <td>${customerMaterialNo}</td>
             <td>IO${10000 + i}</td>
             <td>PO${20000 + i}</td>
             <td>
