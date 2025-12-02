@@ -61,7 +61,7 @@ function generateMockData() {
         // 生成客户物料号，支持多个来源
         let customerMaterialNo = '';
         if (hasCustomerMaterialNo) {
-            const sources = ['wimp', '开阳', 'SAP', 'ERP'];
+            const sources = ['wimp', '开阳'];
             const materialCount = Math.random() > 0.7 ? 2 : 1; // 30%概率有两个料号
             const materials = [];
             for (let j = 0; j < materialCount; j++) {
@@ -1307,7 +1307,7 @@ function generateDetailProductList(item) {
     // 生成5-10条商品数据
     const productCount = 5 + Math.floor(Math.random() * 6);
     const orderPersons = ['张三', '李四', '王五', '赵六', '钱七'];
-    const sources = ['wimp', '开阳', 'SAP', 'ERP'];
+    const sources = ['wimp', '开阳'];
     
     for (let i = 1; i <= productCount; i++) {
         const canEdit = item.status === 'export-pending' || item.status === 'export-pre';
