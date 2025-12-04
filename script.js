@@ -1314,16 +1314,10 @@ function generateDetailProductList(item) {
         const grossWeight = (10 + Math.random() * 50).toFixed(2);
         const netWeight = (grossWeight * 0.8).toFixed(2);
         
-        // 生成客户物料号，支持多个来源
+        // 生成客户物料号，只有一个，不带数据来源
         let customerMaterialNo = '-';
         if (Math.random() > 0.3) {
-            const materialCount = Math.random() > 0.7 ? 2 : 1;
-            const materials = [];
-            for (let j = 0; j < materialCount; j++) {
-                const source = sources[Math.floor(Math.random() * sources.length)];
-                materials.push(`CMN${3000 + i + j}（${source}）`);
-            }
-            customerMaterialNo = materials.join('；');
+            customerMaterialNo = `CMN${3000 + i}`;
         }
         
         const row = document.createElement('tr');
