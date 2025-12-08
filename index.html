@@ -128,7 +128,7 @@
                     <button class="btn btn-success" onclick="handleExport()">导出</button>
                     <!-- <button class="btn btn-primary" onclick="handleBatchAssessment()">批量关务评估</button> -->
                 </div>
-                <div class="toolbar-right">
+                <div class="toolbar-right" style="display: none;">
                     <span id="selectedCount" class="selected-count">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/>
@@ -144,9 +144,6 @@
                 <table class="data-table" id="dataTable">
                     <thead>
                         <tr>
-                            <th class="checkbox-col">
-                                <input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)">
-                            </th>
                             <th>国际SKU</th>
                             <th>国际MKU</th>
                             <th>客户物料号（数据来源）</th>
@@ -311,7 +308,7 @@
             <!-- 操作按钮区域 -->
             <div class="table-actions" style="margin: 0 24px 15px 24px;">
                 <button id="exportMaterialBtn" class="btn btn-primary" onclick="handleExportMaterial()" style="display: inline-block;">
-                    导出资料
+                    导出列表
                 </button>
             </div>
 

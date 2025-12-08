@@ -224,9 +224,8 @@ body {
 .form-actions-inline {
     display: flex;
     gap: 8px;
-    flex: 0 0 calc(25% - 9px);
     justify-content: flex-end;
-    min-width: 200px;
+    width: 100%;
 }
 
 /* 按钮样式 */
@@ -293,8 +292,16 @@ body {
 }
 
 .selected-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: #666;
     font-size: 14px;
+}
+
+.selected-count svg {
+    color: #1890ff;
+    flex-shrink: 0;
 }
 
 .selected-count strong {
@@ -457,14 +464,14 @@ body {
     font-size: 12px;
 }
 
-.type-cross-border {
-    background-color: #e6f7ff;
-    color: #1890ff;
+.type-china {
+    background-color: #fff1f0;
+    color: #cf1322;
 }
 
-.type-local {
-    background-color: #f6ffed;
-    color: #52c41a;
+.type-vietnam {
+    background-color: #fffbe6;
+    color: #d4b106;
 }
 
 .action-btns {

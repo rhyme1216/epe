@@ -19,36 +19,48 @@ let uploadedFiles = { exportDraft: [], export: [], CI: [], PL: [], DN: [], VAT: 
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded event fired');
+    
     // 默认展开第一个菜单
     const firstMenu = document.querySelector('.menu-item');
     if (firstMenu) {
         firstMenu.classList.add('active');
     }
     
+    console.log('About to generate mock data');
     // 生成模拟数据
     generateMockData();
+    console.log('Mock data generated');
     
     // 渲染表格
     renderTable();
+    console.log('Table rendered');
     
+    console.log('About to generate customs data');
     // 生成报关管理模拟数据
-    generateCustomsData();
+    try {
+        generateCustomsData();
+        console.log('generateCustomsData completed successfully');
+    } catch (error) {
+        console.error('Error generating customs data:', error);
+    }
     
-    // 渲染报关表格（如果当前在报关页面）
-    renderCustomsTable();
+    console.log('Initialization complete');
+    // 不需要立即渲染报关表格，因为页面默认不可见
+    // renderCustomsTable();
 });
 
 // 生成模拟数据
 function generateMockData() {
     const statuses = ['pending', 'confirming', 'completed'];
     const statusNames = ['待评估', '待确认', '已评估'];
-    const productTypes = ['cross-border', 'local'];
-    const productTypeNames = ['跨境', '本土'];
+    const productTypes = ['china', 'vietnam'];
+    const productTypeNames = ['中国', '越南'];
     const customers = ['客户A', '客户B', '客户C', '客户D', '客户E'];
     const brands = ['品牌A', '品牌B', '品牌C', '品牌D', '品牌E'];
     const categories = ['电子产品', '日用品', '服装', '食品', '化妆品'];
     const productStatus = ['上架', '下架'];
-    const creators = ['张三', '李四', '王五', '赵六', '钱七'];
+    const creators = ['lizimeng16', 'wangwu23', 'zhaoliu18', 'zhangsan15', 'lisi20'];
     
     mockData = [];
     
@@ -57,6 +69,19 @@ function generateMockData() {
         const typeIndex = Math.floor(Math.random() * productTypes.length);
         const hasCustomerOrder = Math.random() > 0.5;
         const hasCustomerMaterialNo = Math.random() > 0.3;
+        
+        // 生成客户物料号，支持多个来源
+        let customerMaterialNo = '';
+        if (hasCustomerMaterialNo) {
+            const sources = ['wimp', '开阳'];
+            const materialCount = Math.random() > 0.7 ? 2 : 1; // 30%概率有两个料号
+            const materials = [];
+            for (let j = 0; j < materialCount; j++) {
+                const source = sources[Math.floor(Math.random() * sources.length)];
+                materials.push(`CMN${3000 + i + j}（${source}）`);
+            }
+            customerMaterialNo = materials.join('；');
+        }
         
         const createTime = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
         const updateTime = new Date(createTime.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000);
@@ -67,7 +92,7 @@ function generateMockData() {
             intlMku: `MKU${2000 + i}`,
             domesticSku: `DSKU${4000 + i}`,
             domesticSkuLink: `https://www.example.com/product/${4000 + i}`,
-            customerMaterialNo: hasCustomerMaterialNo ? `CMN${3000 + i}` : '',
+            customerMaterialNo: customerMaterialNo,
             customerName: customers[Math.floor(Math.random() * customers.length)],
             productNameCn: `商品${i}`,
             hsCode: `${1000 + Math.floor(Math.random() * 9000)}.${Math.floor(Math.random() * 100)}`,
@@ -145,7 +170,15 @@ function loadPage(pageName) {
         document.getElementById('page-evaluation').classList.add('active');
     } else if (pageName === 'vietnam-epe-customs') {
         document.getElementById('page-customs').classList.add('active');
+        console.log('loadPage: switching to customs page');
+        console.log('customsData.length:', customsData.length);
+        console.log('customsFilteredData.length:', customsFilteredData.length);
+        console.log('currentCustomsStatus:', currentCustomsStatus);
+        
+        // 确保使用当前状态重新过滤和渲染
+        filterCustomsDataByStatus(currentCustomsStatus);
         renderCustomsTable();
+        updateCustomsStatusBadges();
     }
 }
 
@@ -159,25 +192,24 @@ function renderTable() {
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="26" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="23" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
     
     pageData.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="checkbox" class="row-checkbox" value="${item.id}" onchange="updateSelectedCount()"></td>
             <td>${item.intlSku}</td>
             <td>${item.intlMku}</td>
             <td>${item.customerMaterialNo || '-'}</td>
             <td>${item.customerName}</td>
             <td title="${item.productNameCn}">${item.productNameCn}</td>
-            <td>${item.hsCode}</td>
+            <td><input type="text" class="editable-input" value="${item.hsCode}" onblur="updateHsCode(${item.id}, this.value)" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
             <td title="${item.productNameVn}">${item.productNameVn}</td>
             <td><img src="${item.productImage}" alt="商品图片" class="product-image" onclick="viewImage('${item.productImage}')"></td>
             <td>${item.unitCn}</td>
             <td>${item.unitVn}</td>
-            <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.description}">${item.description}</div></td>
+            <td><input type="text" class="editable-input" value="${item.description}" onblur="updateDescription(${item.id}, this.value)" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
             <td><span class="type-badge type-${item.productType}">${item.productTypeName}</span></td>
             <td>${item.erpSystem}</td>
             <td style="min-width: 160px;">${item.createTime}</td>
@@ -186,14 +218,10 @@ function renderTable() {
             <td title="${item.brandName}">${item.brandName}</td>
             <td title="${item.category}">${item.category}</td>
             <td>${item.productStatus}</td>
-            <td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.declarationElements}">${item.declarationElements}</div></td>
-            <td title="${item.remark || '-'}">${item.remark || '-'}</td>
+            <td><input type="text" class="editable-input" value="${item.remark || ''}" onblur="updateRemark(${item.id}, this.value)" placeholder="请输入备注" style="width: 100%; padding: 4px; border: 1px solid #d9d9d9; border-radius: 3px;"></td>
+            <td>${item.creator}</td>
             <td title="${item.updater}">${item.updater}</td>
             <td style="min-width: 160px;">${item.updateTime}</td>
-            <td>${item.creator}</td>
-            <td>
-                ${getActionButtons(item)}
-            </td>
         `;
         tableBody.appendChild(row);
     });
@@ -222,6 +250,11 @@ function updateCheckAllState() {
     const checkboxes = document.querySelectorAll('.row-checkbox');
     const checkAll = document.getElementById('checkAll');
     
+    // 如果全选复选框不存在（已被移除），直接返回
+    if (!checkAll) {
+        return;
+    }
+    
     if (checkboxes.length === 0) {
         checkAll.checked = false;
         checkAll.indeterminate = false;
@@ -246,8 +279,59 @@ function updateCheckAllState() {
 function updateSelectedCount() {
     const checkboxes = document.querySelectorAll('.row-checkbox');
     const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
-    document.getElementById('selectedCount').innerHTML = `已选择 <strong>${checkedCount}</strong> 条`;
+    document.getElementById('selectedCount').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <strong>${checkedCount}</strong>
+    `;
     updateCheckAllState();
+}
+
+// 更新HSCode
+function updateHsCode(id, newValue) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    
+    const oldValue = item.hsCode;
+    if (oldValue === newValue) return;
+    
+    item.hsCode = newValue;
+    console.log(`更新HSCode: ID=${id}, 旧值="${oldValue}", 新值="${newValue}"`);
+    
+    // 实际应用中应该调用API保存
+    // saveHsCode(id, newValue);
+}
+
+// 更新货品描述
+function updateDescription(id, newValue) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    
+    const oldValue = item.description;
+    if (oldValue === newValue) return;
+    
+    item.description = newValue;
+    console.log(`更新货品描述: ID=${id}, 旧值="${oldValue}", 新值="${newValue}"`);
+    
+    // 实际应用中应该调用API保存
+    // saveDescription(id, newValue);
+}
+
+// 更新备注
+function updateRemark(id, newValue) {
+    const item = mockData.find(d => d.id === id);
+    if (!item) return;
+    
+    const oldValue = item.remark || '';
+    if (oldValue === newValue) return;
+    
+    item.remark = newValue;
+    console.log(`更新备注: ID=${id}, 旧值="${oldValue}", 新值="${newValue}"`);
+    
+    // 实际应用中应该调用API保存
+    // saveRemark(id, newValue);
 }
 
 // 获取选中的项目ID
@@ -502,42 +586,44 @@ function generateExcelTemplate(items) {
 
 // 生成报关管理模拟数据
 function generateCustomsData() {
-    const statuses = ['export-pre', 'export-pending', 'export-declaring', 'export-inspecting', 'export-released', 
-                     'import-declaring', 'import-inspecting', 'import-released'];
-    const statusNames = ['出口预报关', '出口待报关', '出口报关中', '出口查验中', '出口已放行', 
-                        '进口报关中', '进口查验中', '进口已放行'];
+    console.log('generateCustomsData: Function called');
+    
+    // 出口阶段的状态
+    const exportStatuses = ['export-pre', 'export-pending', 'export-declaring', 'export-inspecting', 'export-released'];
+    const exportStatusNames = ['出口预报关', '出口待报关', '出口报关中', '出口查验中', '出口已放行'];
+    
+    // 进口阶段的状态（仅在出口已放行后才会进入进口阶段）
+    const importStatuses = ['import-declaring', 'import-inspecting', 'import-released'];
+    const importStatusNames = ['进口报关中', '进口查验中', '进口已放行'];
+    
     const warnings = ['red', 'yellow', 'green', 'null'];
     const warningNames = ['红灯', '黄灯', '绿灯', 'NULL'];
     const invoiceStatuses = ['not-invoiced', 'data-error', 'partial-draft', 'partial-formal', 'draft-invoiced', 'formal-invoiced'];
     const invoiceStatusNames = ['未开票', '开票数据错误', '部分草稿票', '部分正式票', '已开草稿票', '已开正式票'];
     const updaters = ['lizimeng16', 'wangwu23', 'zhaoliu18', 'zhangsan15', 'lisi20'];
+    const exportCountries = ['china', 'vietnam'];
+    const exportCountryNames = ['中国', '越南'];
     
     customsData = [];
     
+    console.log('generateCustomsData: Starting to generate 100 records');
+    
     for (let i = 1; i <= 100; i++) {
-        const statusIndex = Math.floor(Math.random() * statuses.length);
-        const warningIndex = Math.floor(Math.random() * warnings.length);
-        const vatInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
-        const dnInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
-        const status = statuses[statusIndex];
-        const isExport = status.startsWith('export');
-        
         const createTime = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
         const updateTime = new Date(createTime.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000);
         
-        // 根据状态决定放行日期
-        let exportReleaseDate = '';
-        let importReleaseDate = '';
+        // 70%的数据是出口阶段，30%的数据是进口阶段
+        const isImportPhase = Math.random() > 0.7;
         
-        // 出口已放行状态：有出口放行日期
-        if (status === 'export-released') {
-            exportReleaseDate = formatDate(updateTime);
-        }
+        let status, statusName, exportReleaseDate = '', importReleaseDate = '';
         
-        // 进口状态（import-declaring, import-inspecting, import-released）：
-        // 必须先有出口放行日期，才能有进口相关数据
-        if (status.startsWith('import-')) {
-            // 进口状态必须有出口放行日期（比当前时间早一些）
+        if (isImportPhase) {
+            // 进口阶段：必然已经出口放行
+            const importStatusIndex = Math.floor(Math.random() * importStatuses.length);
+            status = importStatuses[importStatusIndex];
+            statusName = importStatusNames[importStatusIndex];
+            
+            // 进口阶段必须有出口放行日期
             const exportDate = new Date(updateTime.getTime() - Math.random() * 10 * 24 * 60 * 60 * 1000);
             exportReleaseDate = formatDate(exportDate);
             
@@ -545,14 +631,30 @@ function generateCustomsData() {
             if (status === 'import-released') {
                 importReleaseDate = formatDate(updateTime);
             }
+        } else {
+            // 出口阶段
+            const exportStatusIndex = Math.floor(Math.random() * exportStatuses.length);
+            status = exportStatuses[exportStatusIndex];
+            statusName = exportStatusNames[exportStatusIndex];
+            
+            // 只有出口已放行状态才有出口放行日期
+            if (status === 'export-released') {
+                exportReleaseDate = formatDate(updateTime);
+            }
         }
+        
+        const isExport = status.startsWith('export');
+        const warningIndex = Math.floor(Math.random() * warnings.length);
+        const vatInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
+        const dnInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
+        const exportCountryIndex = Math.floor(Math.random() * exportCountries.length);
         
         customsData.push({
             id: i,
             batchNo: `BATCH${2024}${String(i).padStart(4, '0')}`,
             customerCode: `CUST${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,
             status: status,
-            statusName: statusNames[statusIndex],
+            statusName: statusName,
             vatInvoiceStatus: invoiceStatuses[vatInvoiceStatusIndex],
             vatInvoiceStatusName: invoiceStatusNames[vatInvoiceStatusIndex],
             dnInvoiceStatus: invoiceStatuses[dnInvoiceStatusIndex],
@@ -563,10 +665,14 @@ function generateCustomsData() {
             importWarning: !isExport && Math.random() > 0.3 ? warnings[warningIndex] : '',
             exportReleaseDate: exportReleaseDate,
             importReleaseDate: importReleaseDate,
+            exportCountry: exportCountries[exportCountryIndex],
+            exportCountryName: exportCountryNames[exportCountryIndex],
             updater: updaters[Math.floor(Math.random() * updaters.length)],
             updateTime: formatDateTime(updateTime)
         });
     }
+    
+    console.log('generateCustomsData: Generated', customsData.length, 'records');
     
     // 初始化过滤数据
     filterCustomsDataByStatus(currentCustomsStatus);
@@ -592,18 +698,28 @@ function switchCustomsTab(element, status) {
     element.classList.add('active');
     currentCustomsStatus = status;
     
-    // 重置搜索条件
+    // 重置搜索条件并重新渲染
     handleCustomsReset();
+    
+    // 确保渲染表格
+    filterCustomsDataByStatus(status);
+    renderCustomsTable();
 }
 
 // 根据状态过滤数据
 function filterCustomsDataByStatus(status) {
+    console.log('filterCustomsDataByStatus called with status:', status);
+    console.log('customsData length before filter:', customsData.length);
+    
     if (status === 'all') {
         // 全部状态，显示所有数据
         customsFilteredData = [...customsData];
     } else if (status === 'export-waiting') {
         // 出口等待中：出口已放行的数据
         customsFilteredData = customsData.filter(item => item.status === 'export-released');
+    } else if (status === 'export-released') {
+        // 出口已放行TAB：只显示已进入进口阶段的数据（import-*状态），不显示进口等待中的数据
+        customsFilteredData = customsData.filter(item => item.status.startsWith('import-'));
     } else if (status === 'import-waiting') {
         // 进口等待中：出口非已放行的数据（待报关、报关中、海关查验中）
         customsFilteredData = customsData.filter(item => 
@@ -618,10 +734,8 @@ function filterCustomsDataByStatus(status) {
     customsTotalRecords = customsFilteredData.length;
     customsCurrentPage = 1;
     
-    // 自动渲染表格
-    if (document.getElementById('customsTableBody')) {
-        renderCustomsTable();
-    }
+    console.log('customsFilteredData length after filter:', customsFilteredData.length);
+    console.log('customsTotalRecords:', customsTotalRecords);
 }
 
 // 更新状态徽标数字
@@ -667,8 +781,14 @@ function updateCustomsStatusBadges() {
 function renderCustomsTable() {
     const tableBody = document.getElementById('customsTableBody');
     
+    console.log('renderCustomsTable called');
+    console.log('customsData length:', customsData.length);
+    console.log('customsFilteredData length:', customsFilteredData.length);
+    console.log('currentCustomsStatus:', currentCustomsStatus);
+    
     // 如果表格不存在（页面未加载），直接返回
     if (!tableBody) {
+        console.log('tableBody not found');
         return;
     }
     
@@ -676,10 +796,13 @@ function renderCustomsTable() {
     const end = start + customsPageSize;
     const pageData = customsFilteredData.slice(start, end);
     
+    console.log('pageData length:', pageData.length);
+    
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
+        console.log('No data to display');
+        tableBody.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
     
@@ -697,7 +820,8 @@ function renderCustomsTable() {
             <td>${importStatusText}</td>
             <td><span class="invoice-badge invoice-${item.vatInvoiceStatus}">${item.vatInvoiceStatusName}</span></td>
             <td><span class="invoice-badge invoice-${item.dnInvoiceStatus}">${item.dnInvoiceStatusName}</span></td>
-            <td><span class="warning-badge warning-${item.warning}">${item.warningName}</span></td>
+            <td><span class="warning-badge warning-${item.exportWarning}">${getWarningName(item.exportWarning)}</span></td>
+            <td><span class="warning-badge warning-${item.importWarning}">${getWarningName(item.importWarning)}</span></td>
             <td>${item.exportReleaseDate || '-'}</td>
             <td>${item.importReleaseDate || '-'}</td>
             <td>${item.updater}</td>
@@ -777,11 +901,25 @@ function getImportStatusText(item) {
 function getCustomsActionButtons(item) {
     let buttons = '';
     
-    // 特殊处理：如果当前在进口等待中TAB,只显示详情按钮
+    // 特殊处理：如果当前在出口已放行TAB，只显示导出资料和详情按钮
+    if (currentCustomsStatus === 'export-released') {
+        buttons = `
+            <div class="action-btns">
+                <div class="action-btn-row">
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                </div>
+            </div>
+        `;
+        return buttons;
+    }
+    
+    // 特殊处理：如果当前在进口等待中TAB,只显示导出资料和详情按钮
     if (currentCustomsStatus === 'import-waiting') {
         buttons = `
             <div class="action-btns">
                 <div class="action-btn-row">
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                     <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                 </div>
             </div>
@@ -791,28 +929,32 @@ function getCustomsActionButtons(item) {
     
     switch(item.status) {
         case 'export-pre':
-            // 出口预报关：详情
+            // 出口预报关：导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-pending':
-            // 出口待报关：确认报关、详情
+            // 出口待报关：确认报关、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
                         <button class="action-btn" onclick="handleConfirmDeclaration(${item.id})">确认报关</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    </div>
+                    <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-declaring':
-            // 出口报关中：取消确认、海关查验、海关放行、详情
+            // 出口报关中：取消确认、海关查验、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
@@ -821,13 +963,16 @@ function getCustomsActionButtons(item) {
                     </div>
                     <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    </div>
+                    <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-inspecting':
-            // 出口查验中：取消确认、海关放行、详情
+            // 出口查验中：取消确认、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
@@ -835,28 +980,34 @@ function getCustomsActionButtons(item) {
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
                     </div>
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-released':
-            // 出口已放行/进口等待中：详情
+            // 出口已放行/进口等待中：导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'import-declaring':
-            // 进口待报关：海关查验、海关放行、详情
+            // 进口报关中：取消确认、海关查验、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
                         <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
+                    </div>
+                    <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                     </div>
                     <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
@@ -865,7 +1016,7 @@ function getCustomsActionButtons(item) {
             `;
             break;
         case 'import-inspecting':
-            // 进口查验中：取消确认、海关放行、详情
+            // 进口查验中：取消确认、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
@@ -873,17 +1024,18 @@ function getCustomsActionButtons(item) {
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
                     </div>
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'import-released':
-            // 进口已放行：取消确认、详情
+            // 进口已放行：导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
@@ -898,7 +1050,8 @@ function getCustomsActionButtons(item) {
 function handleCustomsSearch() {
     const batchNo = document.getElementById('customs_batchNo').value.trim();
     const customerCode = document.getElementById('customs_customerCode').value.trim();
-    const warning = document.getElementById('customs_inspectionWarning').value;
+    const exportWarning = document.getElementById('customs_exportInspectionWarning').value;
+    const importWarning = document.getElementById('customs_importInspectionWarning').value;
     
     // 先根据状态过滤
     customsFilteredData = customsData.filter(item => item.status === currentCustomsStatus);
@@ -912,8 +1065,12 @@ function handleCustomsSearch() {
         customsFilteredData = customsFilteredData.filter(item => item.customerCode.includes(customerCode));
     }
     
-    if (warning) {
-        customsFilteredData = customsFilteredData.filter(item => item.warning === warning);
+    if (exportWarning) {
+        customsFilteredData = customsFilteredData.filter(item => item.exportWarning === exportWarning);
+    }
+    
+    if (importWarning) {
+        customsFilteredData = customsFilteredData.filter(item => item.importWarning === importWarning);
     }
     
     customsTotalRecords = customsFilteredData.length;
@@ -925,7 +1082,8 @@ function handleCustomsSearch() {
 function handleCustomsReset() {
     document.getElementById('customs_batchNo').value = '';
     document.getElementById('customs_customerCode').value = '';
-    document.getElementById('customs_inspectionWarning').value = '';
+    document.getElementById('customs_exportInspectionWarning').value = '';
+    document.getElementById('customs_importInspectionWarning').value = '';
     
     filterCustomsDataByStatus(currentCustomsStatus);
     renderCustomsTable();
@@ -1115,6 +1273,21 @@ function handleCustomsDetail(id) {
     showCustomsDetail(item);
 }
 
+// 导出单条报关资料
+function exportCustomsMaterialDetail(id) {
+    const item = customsData.find(d => d.id === id);
+    if (!item) {
+        alert('未找到该报关单信息');
+        return;
+    }
+    
+    console.log('导出资料：', item);
+    alert(`正在导出批次号 ${item.batchNo} 的报关资料\n\n包括：\n- CI（商业发票）\n- PL（装箱单）\n- DN（交货单）\n- VAT（增值税发票）\n\n请稍候...`);
+    
+    // 实际项目中，这里应该调用后端API下载文件
+    // 例如：window.open(`/api/customs/export-materials/${id}`, '_blank');
+}
+
 // 显示报关单详情
 function showCustomsDetail(item) {
     // 填充基本信息
@@ -1236,17 +1409,25 @@ function generateDetailProductList(item) {
     // 生成5-10条商品数据
     const productCount = 5 + Math.floor(Math.random() * 6);
     const orderPersons = ['张三', '李四', '王五', '赵六', '钱七'];
+    const sources = ['wimp', '开阳'];
     
     for (let i = 1; i <= productCount; i++) {
         const canEdit = item.status === 'export-pending' || item.status === 'export-pre';
         const grossWeight = (10 + Math.random() * 50).toFixed(2);
         const netWeight = (grossWeight * 0.8).toFixed(2);
+        
+        // 生成客户物料号，只有一个，不带数据来源
+        let customerMaterialNo = '-';
+        if (Math.random() > 0.3) {
+            customerMaterialNo = `CMN${3000 + i}`;
+        }
+        
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${i}</td>
             <td>MKU${2000 + i}</td>
             <td>SKU${1000 + i}</td>
-            <td>${Math.random() > 0.3 ? 'CMN' + (3000 + i) : '-'}</td>
+            <td>${customerMaterialNo}</td>
             <td>IO${10000 + i}</td>
             <td>PO${20000 + i}</td>
             <td>

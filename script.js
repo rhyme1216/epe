@@ -19,23 +19,35 @@ let uploadedFiles = { exportDraft: [], export: [], CI: [], PL: [], DN: [], VAT: 
 
 // 初始化页面
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded event fired');
+    
     // 默认展开第一个菜单
     const firstMenu = document.querySelector('.menu-item');
     if (firstMenu) {
         firstMenu.classList.add('active');
     }
     
+    console.log('About to generate mock data');
     // 生成模拟数据
     generateMockData();
+    console.log('Mock data generated');
     
     // 渲染表格
     renderTable();
+    console.log('Table rendered');
     
+    console.log('About to generate customs data');
     // 生成报关管理模拟数据
-    generateCustomsData();
+    try {
+        generateCustomsData();
+        console.log('generateCustomsData completed successfully');
+    } catch (error) {
+        console.error('Error generating customs data:', error);
+    }
     
-    // 渲染报关表格（如果当前在报关页面）
-    renderCustomsTable();
+    console.log('Initialization complete');
+    // 不需要立即渲染报关表格，因为页面默认不可见
+    // renderCustomsTable();
 });
 
 // 生成模拟数据
@@ -158,7 +170,15 @@ function loadPage(pageName) {
         document.getElementById('page-evaluation').classList.add('active');
     } else if (pageName === 'vietnam-epe-customs') {
         document.getElementById('page-customs').classList.add('active');
+        console.log('loadPage: switching to customs page');
+        console.log('customsData.length:', customsData.length);
+        console.log('customsFilteredData.length:', customsFilteredData.length);
+        console.log('currentCustomsStatus:', currentCustomsStatus);
+        
+        // 确保使用当前状态重新过滤和渲染
+        filterCustomsDataByStatus(currentCustomsStatus);
         renderCustomsTable();
+        updateCustomsStatusBadges();
     }
 }
 
@@ -172,14 +192,13 @@ function renderTable() {
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="24" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="23" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
     
     pageData.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="checkbox" class="row-checkbox" value="${item.id}" onchange="updateSelectedCount()"></td>
             <td>${item.intlSku}</td>
             <td>${item.intlMku}</td>
             <td>${item.customerMaterialNo || '-'}</td>
@@ -230,6 +249,11 @@ function toggleCheckAll(checkbox) {
 function updateCheckAllState() {
     const checkboxes = document.querySelectorAll('.row-checkbox');
     const checkAll = document.getElementById('checkAll');
+    
+    // 如果全选复选框不存在（已被移除），直接返回
+    if (!checkAll) {
+        return;
+    }
     
     if (checkboxes.length === 0) {
         checkAll.checked = false;
@@ -562,10 +586,16 @@ function generateExcelTemplate(items) {
 
 // 生成报关管理模拟数据
 function generateCustomsData() {
-    const statuses = ['export-pre', 'export-pending', 'export-declaring', 'export-inspecting', 'export-released', 
-                     'import-declaring', 'import-inspecting', 'import-released'];
-    const statusNames = ['出口预报关', '出口待报关', '出口报关中', '出口查验中', '出口已放行', 
-                        '进口报关中', '进口查验中', '进口已放行'];
+    console.log('generateCustomsData: Function called');
+    
+    // 出口阶段的状态
+    const exportStatuses = ['export-pre', 'export-pending', 'export-declaring', 'export-inspecting', 'export-released'];
+    const exportStatusNames = ['出口预报关', '出口待报关', '出口报关中', '出口查验中', '出口已放行'];
+    
+    // 进口阶段的状态（仅在出口已放行后才会进入进口阶段）
+    const importStatuses = ['import-declaring', 'import-inspecting', 'import-released'];
+    const importStatusNames = ['进口报关中', '进口查验中', '进口已放行'];
+    
     const warnings = ['red', 'yellow', 'green', 'null'];
     const warningNames = ['红灯', '黄灯', '绿灯', 'NULL'];
     const invoiceStatuses = ['not-invoiced', 'data-error', 'partial-draft', 'partial-formal', 'draft-invoiced', 'formal-invoiced'];
@@ -576,31 +606,24 @@ function generateCustomsData() {
     
     customsData = [];
     
+    console.log('generateCustomsData: Starting to generate 100 records');
+    
     for (let i = 1; i <= 100; i++) {
-        const statusIndex = Math.floor(Math.random() * statuses.length);
-        const warningIndex = Math.floor(Math.random() * warnings.length);
-        const vatInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
-        const dnInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
-        const exportCountryIndex = Math.floor(Math.random() * exportCountries.length);
-        const status = statuses[statusIndex];
-        const isExport = status.startsWith('export');
-        
         const createTime = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
         const updateTime = new Date(createTime.getTime() + Math.random() * 30 * 24 * 60 * 60 * 1000);
         
-        // 根据状态决定放行日期
-        let exportReleaseDate = '';
-        let importReleaseDate = '';
+        // 70%的数据是出口阶段，30%的数据是进口阶段
+        const isImportPhase = Math.random() > 0.7;
         
-        // 出口已放行状态：有出口放行日期
-        if (status === 'export-released') {
-            exportReleaseDate = formatDate(updateTime);
-        }
+        let status, statusName, exportReleaseDate = '', importReleaseDate = '';
         
-        // 进口状态（import-declaring, import-inspecting, import-released）：
-        // 必须先有出口放行日期，才能有进口相关数据
-        if (status.startsWith('import-')) {
-            // 进口状态必须有出口放行日期（比当前时间早一些）
+        if (isImportPhase) {
+            // 进口阶段：必然已经出口放行
+            const importStatusIndex = Math.floor(Math.random() * importStatuses.length);
+            status = importStatuses[importStatusIndex];
+            statusName = importStatusNames[importStatusIndex];
+            
+            // 进口阶段必须有出口放行日期
             const exportDate = new Date(updateTime.getTime() - Math.random() * 10 * 24 * 60 * 60 * 1000);
             exportReleaseDate = formatDate(exportDate);
             
@@ -608,14 +631,30 @@ function generateCustomsData() {
             if (status === 'import-released') {
                 importReleaseDate = formatDate(updateTime);
             }
+        } else {
+            // 出口阶段
+            const exportStatusIndex = Math.floor(Math.random() * exportStatuses.length);
+            status = exportStatuses[exportStatusIndex];
+            statusName = exportStatusNames[exportStatusIndex];
+            
+            // 只有出口已放行状态才有出口放行日期
+            if (status === 'export-released') {
+                exportReleaseDate = formatDate(updateTime);
+            }
         }
+        
+        const isExport = status.startsWith('export');
+        const warningIndex = Math.floor(Math.random() * warnings.length);
+        const vatInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
+        const dnInvoiceStatusIndex = Math.floor(Math.random() * invoiceStatuses.length);
+        const exportCountryIndex = Math.floor(Math.random() * exportCountries.length);
         
         customsData.push({
             id: i,
             batchNo: `BATCH${2024}${String(i).padStart(4, '0')}`,
             customerCode: `CUST${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,
             status: status,
-            statusName: statusNames[statusIndex],
+            statusName: statusName,
             vatInvoiceStatus: invoiceStatuses[vatInvoiceStatusIndex],
             vatInvoiceStatusName: invoiceStatusNames[vatInvoiceStatusIndex],
             dnInvoiceStatus: invoiceStatuses[dnInvoiceStatusIndex],
@@ -632,6 +671,8 @@ function generateCustomsData() {
             updateTime: formatDateTime(updateTime)
         });
     }
+    
+    console.log('generateCustomsData: Generated', customsData.length, 'records');
     
     // 初始化过滤数据
     filterCustomsDataByStatus(currentCustomsStatus);
@@ -657,18 +698,28 @@ function switchCustomsTab(element, status) {
     element.classList.add('active');
     currentCustomsStatus = status;
     
-    // 重置搜索条件
+    // 重置搜索条件并重新渲染
     handleCustomsReset();
+    
+    // 确保渲染表格
+    filterCustomsDataByStatus(status);
+    renderCustomsTable();
 }
 
 // 根据状态过滤数据
 function filterCustomsDataByStatus(status) {
+    console.log('filterCustomsDataByStatus called with status:', status);
+    console.log('customsData length before filter:', customsData.length);
+    
     if (status === 'all') {
         // 全部状态，显示所有数据
         customsFilteredData = [...customsData];
     } else if (status === 'export-waiting') {
         // 出口等待中：出口已放行的数据
         customsFilteredData = customsData.filter(item => item.status === 'export-released');
+    } else if (status === 'export-released') {
+        // 出口已放行TAB：只显示已进入进口阶段的数据（import-*状态），不显示进口等待中的数据
+        customsFilteredData = customsData.filter(item => item.status.startsWith('import-'));
     } else if (status === 'import-waiting') {
         // 进口等待中：出口非已放行的数据（待报关、报关中、海关查验中）
         customsFilteredData = customsData.filter(item => 
@@ -683,10 +734,8 @@ function filterCustomsDataByStatus(status) {
     customsTotalRecords = customsFilteredData.length;
     customsCurrentPage = 1;
     
-    // 自动渲染表格
-    if (document.getElementById('customsTableBody')) {
-        renderCustomsTable();
-    }
+    console.log('customsFilteredData length after filter:', customsFilteredData.length);
+    console.log('customsTotalRecords:', customsTotalRecords);
 }
 
 // 更新状态徽标数字
@@ -732,8 +781,14 @@ function updateCustomsStatusBadges() {
 function renderCustomsTable() {
     const tableBody = document.getElementById('customsTableBody');
     
+    console.log('renderCustomsTable called');
+    console.log('customsData length:', customsData.length);
+    console.log('customsFilteredData length:', customsFilteredData.length);
+    console.log('currentCustomsStatus:', currentCustomsStatus);
+    
     // 如果表格不存在（页面未加载），直接返回
     if (!tableBody) {
+        console.log('tableBody not found');
         return;
     }
     
@@ -741,9 +796,12 @@ function renderCustomsTable() {
     const end = start + customsPageSize;
     const pageData = customsFilteredData.slice(start, end);
     
+    console.log('pageData length:', pageData.length);
+    
     tableBody.innerHTML = '';
     
     if (pageData.length === 0) {
+        console.log('No data to display');
         tableBody.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 40px; color: #999;">暂无数据</td></tr>';
         return;
     }
@@ -843,11 +901,25 @@ function getImportStatusText(item) {
 function getCustomsActionButtons(item) {
     let buttons = '';
     
-    // 特殊处理：如果当前在进口等待中TAB,只显示详情按钮
+    // 特殊处理：如果当前在出口已放行TAB，只显示导出资料和详情按钮
+    if (currentCustomsStatus === 'export-released') {
+        buttons = `
+            <div class="action-btns">
+                <div class="action-btn-row">
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                </div>
+            </div>
+        `;
+        return buttons;
+    }
+    
+    // 特殊处理：如果当前在进口等待中TAB,只显示导出资料和详情按钮
     if (currentCustomsStatus === 'import-waiting') {
         buttons = `
             <div class="action-btns">
                 <div class="action-btn-row">
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                     <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                 </div>
             </div>
@@ -857,28 +929,32 @@ function getCustomsActionButtons(item) {
     
     switch(item.status) {
         case 'export-pre':
-            // 出口预报关：详情
+            // 出口预报关：导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-pending':
-            // 出口待报关：确认报关、详情
+            // 出口待报关：确认报关、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
                         <button class="action-btn" onclick="handleConfirmDeclaration(${item.id})">确认报关</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    </div>
+                    <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-declaring':
-            // 出口报关中：取消确认、海关查验、海关放行、详情
+            // 出口报关中：取消确认、海关查验、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
@@ -887,13 +963,16 @@ function getCustomsActionButtons(item) {
                     </div>
                     <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    </div>
+                    <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-inspecting':
-            // 出口查验中：取消确认、海关放行、详情
+            // 出口查验中：取消确认、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
@@ -901,28 +980,34 @@ function getCustomsActionButtons(item) {
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
                     </div>
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'export-released':
-            // 出口已放行/进口等待中：详情
+            // 出口已放行/进口等待中：导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'import-declaring':
-            // 进口待报关：海关查验、海关放行、详情
+            // 进口报关中：取消确认、海关查验、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
                         <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
+                    </div>
+                    <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                     </div>
                     <div class="action-btn-row">
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
@@ -931,7 +1016,7 @@ function getCustomsActionButtons(item) {
             `;
             break;
         case 'import-inspecting':
-            // 进口查验中：取消确认、海关放行、详情
+            // 进口查验中：取消确认、海关放行、导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
@@ -939,16 +1024,18 @@ function getCustomsActionButtons(item) {
                         <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
                     </div>
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
             `;
             break;
         case 'import-released':
-            // 进口已放行：详情
+            // 进口已放行：导出资料、详情
             buttons = `
                 <div class="action-btns">
                     <div class="action-btn-row">
+                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
                         <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                     </div>
                 </div>
@@ -1184,6 +1271,21 @@ function handleCustomsDetail(id) {
     
     // 显示详情页
     showCustomsDetail(item);
+}
+
+// 导出单条报关资料
+function exportCustomsMaterialDetail(id) {
+    const item = customsData.find(d => d.id === id);
+    if (!item) {
+        alert('未找到该报关单信息');
+        return;
+    }
+    
+    console.log('导出资料：', item);
+    alert(`正在导出批次号 ${item.batchNo} 的报关资料\n\n包括：\n- CI（商业发票）\n- PL（装箱单）\n- DN（交货单）\n- VAT（增值税发票）\n\n请稍候...`);
+    
+    // 实际项目中，这里应该调用后端API下载文件
+    // 例如：window.open(`/api/customs/export-materials/${id}`, '_blank');
 }
 
 // 显示报关单详情
