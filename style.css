@@ -319,6 +319,12 @@ body {
     border-radius: 4px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     position: relative;
+    z-index: auto;
+}
+
+.table-wrapper {
+    overflow: auto;
+    max-height: calc(100vh - 300px);
 }
 
 .data-table {
@@ -332,7 +338,7 @@ body {
     background-color: #fafafa;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 5;
 }
 
 .data-table th {
@@ -361,13 +367,13 @@ body {
 .data-table td:nth-child(2) {
     position: sticky;
     left: 0;
-    z-index: 9;
+    z-index: 4;
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
     min-width: 120px;
 }
 
 .data-table th:nth-child(2) {
-    z-index: 11;
+    z-index: 6;
 }
 
 /* 固定复选框列 */
@@ -375,7 +381,7 @@ body {
 .data-table td:first-child {
     position: sticky;
     left: 0;
-    z-index: 10;
+    z-index: 3;
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
     width: 50px;
     min-width: 50px;
@@ -384,7 +390,7 @@ body {
 }
 
 .data-table th:first-child {
-    z-index: 12;
+    z-index: 6;
 }
 
 .checkbox-col {
@@ -406,15 +412,15 @@ body {
 #customsDataTable td:last-child {
     position: sticky;
     right: 0;
-    z-index: 9;
+    z-index: 2;
     box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
-    min-width: 100px;
+    min-width: 150px;
     white-space: normal;
 }
 
 #dataTable th:last-child,
 #customsDataTable th:last-child {
-    z-index: 11;
+    z-index: 6;
 }
 
 /* 其他列最小宽度 */
@@ -475,31 +481,105 @@ body {
 }
 
 .action-btns {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 4px;
-    min-width: 90px;
+    width: 140px;
 }
 
 .action-btn-row {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-start;
+    display: contents;
 }
 
 .action-btn {
-    padding: 4px 8px;
+    padding: 3px 6px;
     background-color: transparent;
     color: #1890ff;
     border: none;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     white-space: nowrap;
+    text-align: center;
 }
 
 .action-btn:hover {
     color: #40a9ff;
     text-decoration: underline;
+}
+
+/* 下拉菜单portal容器 */
+#dropdownPortal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+#dropdownPortal > * {
+    pointer-events: auto;
+}
+
+/* 下拉菜单样式 */
+.action-dropdown {
+    position: static;
+    display: block;
+}
+
+.action-dropdown-toggle {
+    width: 100%;
+    padding: 3px 6px;
+    background-color: transparent;
+    color: #1890ff;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.action-dropdown-toggle:hover {
+    color: #40a9ff;
+}
+
+.action-dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 200px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    z-index: 9999999;
+    padding: 8px;
+}
+
+.action-dropdown-menu.show {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.action-dropdown-item {
+    display: block;
+    padding: 8px 12px;
+    background-color: transparent;
+    color: #333;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 4px;
+}
+
+.action-dropdown-item:hover {
+    background-color: #f5f5f5;
+    color: #1890ff;
 }
 
 /* 分页 */

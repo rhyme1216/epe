@@ -901,26 +901,49 @@ function getImportStatusText(item) {
 function getCustomsActionButtons(item) {
     let buttons = '';
     
-    // 特殊处理：如果当前在出口已放行TAB，只显示导出资料和详情按钮
-    if (currentCustomsStatus === 'export-released') {
+    // 特殊处理:如果当前在出口等待中TAB,只显示导出资料和详情按钮(无上传正式文件)
+    if (currentCustomsStatus === 'export-waiting') {
         buttons = `
             <div class="action-btns">
-                <div class="action-btn-row">
-                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                <div class="action-dropdown">
+                    <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                    <div class="action-dropdown-menu">
+                        <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                        <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    </div>
                 </div>
             </div>
         `;
         return buttons;
     }
     
-    // 特殊处理：如果当前在进口等待中TAB,只显示导出资料和详情按钮
+    // 特殊处理:如果当前在出口已放行TAB,显示导出资料、详情和上传正式文件按钮
+    if (currentCustomsStatus === 'export-released') {
+        buttons = `
+            <div class="action-btns">
+                <div class="action-dropdown">
+                    <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                    <div class="action-dropdown-menu">
+                        <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                        <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                        <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        return buttons;
+    }
+    
+    // 特殊处理:如果当前在进口等待中TAB,只显示导出资料和详情按钮(等待中无上传正式文件)
     if (currentCustomsStatus === 'import-waiting') {
         buttons = `
             <div class="action-btns">
-                <div class="action-btn-row">
-                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                <div class="action-dropdown">
+                    <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                    <div class="action-dropdown-menu">
+                        <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                        <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -929,114 +952,131 @@ function getCustomsActionButtons(item) {
     
     switch(item.status) {
         case 'export-pre':
-            // 出口预报关：导出资料、详情
+            // 出口预报关(201等待中):导出资料、详情(无上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'export-pending':
-            // 出口待报关：确认报关、导出资料、详情
+            // 出口待报关(202):确认报关按钮+下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleConfirmDeclaration(${item.id})">确认报关</button>
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleConfirmDeclaration(${item.id})">确认报关</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'export-declaring':
-            // 出口报关中：取消确认、海关查验、海关放行、导出资料、详情
+            // 出口报关中(203):取消确认、海关查验、海关放行+下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
-                        <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
+                    <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
+                    <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'export-inspecting':
-            // 出口查验中：取消确认、海关放行、导出资料、详情
+            // 出口查验中(204):取消确认、海关放行+下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
-                        <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
+                    <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'export-released':
-            // 出口已放行/进口等待中：导出资料、详情
+            // 出口已放行(205):下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'import-declaring':
-            // 进口报关中：取消确认、海关查验、海关放行、导出资料、详情
+            // 进口报关中(102):取消确认、海关查验、海关放行+下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
-                        <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
+                    <button class="action-btn" onclick="handleCustomsInspection(${item.id})">海关查验</button>
+                    <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'import-inspecting':
-            // 进口查验中：取消确认、海关放行、导出资料、详情
+            // 进口查验中(103):取消确认、海关放行+下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
-                        <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
-                    </div>
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleCancelConfirm(${item.id})">取消确认</button>
+                    <button class="action-btn" onclick="handleCustomsRelease(${item.id})">海关放行</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
             break;
         case 'import-released':
-            // 进口已放行：导出资料、详情
+            // 进口已放行(104):下拉(导出资料、详情、上传正式文件)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-btn-row">
-                        <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <div class="action-dropdown">
+                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
+                        <div class="action-dropdown-menu">
+                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
+                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1261,6 +1301,80 @@ function handleCustomsRelease(id) {
     document.getElementById('saveDetailBtn').style.display = 'inline-block';
 }
 
+// 上传正式文件
+function handleUploadFormalDoc(id) {
+    const item = customsData.find(d => d.id === id);
+    if (!item) {
+        alert('未找到对应的报关数据');
+        return;
+    }
+    
+    // TODO: 实现上传正式文件功能
+    alert(`上传正式文件 - 报关编号: ${item.customsNo}`);
+}
+
+// 切换操作下拉菜单显示/隐藏
+function toggleActionDropdown(event) {
+    event.stopPropagation();
+    event.preventDefault();
+    const toggle = event.currentTarget;
+    const menu = toggle.nextElementSibling;
+    const isCurrentlyShown = menu.classList.contains('show');
+    
+    // 关闭所有其他已打开的下拉菜单
+    document.querySelectorAll('.action-dropdown-menu.show').forEach(m => {
+        m.classList.remove('show');
+        // 如果菜单在portal中,移除它
+        if (m.parentElement && m.parentElement.id === 'dropdownPortal') {
+            m.parentElement.removeChild(m);
+        }
+    });
+    
+    // 切换当前菜单
+    if (!isCurrentlyShown) {
+        // 计算菜单位置
+        const rect = toggle.getBoundingClientRect();
+        
+        // 克隆菜单并添加到body级别的portal
+        const portal = document.getElementById('dropdownPortal');
+        const menuClone = menu.cloneNode(true);
+        menuClone.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        menuClone.style.left = (rect.left + window.scrollX) + 'px';
+        menuClone.classList.add('show');
+        
+        // 重新绑定克隆菜单的点击事件
+        menuClone.querySelectorAll('.action-dropdown-item').forEach(item => {
+            const onclick = item.getAttribute('onclick');
+            if (onclick) {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    eval(onclick);
+                    menuClone.classList.remove('show');
+                    portal.removeChild(menuClone);
+                });
+            }
+        });
+        
+        portal.appendChild(menuClone);
+    }
+}
+
+// 点击页面其他地方时关闭所有下拉菜单
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.action-dropdown')) {
+        document.querySelectorAll('.action-dropdown-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+            // 如果菜单在portal中,移除它
+            if (menu.parentElement && menu.parentElement.id === 'dropdownPortal') {
+                menu.parentElement.removeChild(menu);
+            }
+        });
+    }
+});
+
+// 点击下拉菜单项后关闭菜单(这个事件现在由上面的克隆处理)
+
+
 // 报关详情
 function handleCustomsDetail(id) {
     const item = customsData.find(d => d.id === id);
@@ -1307,7 +1421,9 @@ function showCustomsDetail(item) {
     exportDraftDocSection.style.display = 'flex';
     exportWarningSection.style.display = 'flex';
     exportReleaseDateSection.style.display = 'flex';
-    exportDocSection.style.display = 'flex';
+    if (exportDocSection) {
+        exportDocSection.style.display = 'flex';
+    }
     
     // 重置所有字段为禁用状态
     document.getElementById('exportDraftUploadBtn').disabled = true;

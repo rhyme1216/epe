@@ -423,13 +423,13 @@
                         <a href="javascript:void(0)" class="download-link" id="download_pl" onclick="downloadFile('PL')">在线导出</a>
                     </div>
                     <div class="detail-info-item" id="dnInvoiceSection">
-                        <label>DN开票状态（二期，本期为DN上传）：</label>
+                        <label>DN（状态二期，本期文件上传）：</label>
                         <span id="detail_dnInvoiceStatus"></span>
                         <a href="javascript:void(0)" class="download-link" id="download_dn" onclick="downloadFile('DN')">在线导出</a>
                     </div>
                     <!-- 第二行: VAT、进口查验预警、进口放行日期、出口报关资料（正式文件） -->
                     <div class="detail-info-item" id="vatInvoiceSection">
-                        <label>VAT开票状态（二期，本期为VAT上传）：</label>
+                        <label>VAT（状态二期，本期文件上传）：</label>
                         <span id="detail_vatInvoiceStatus"></span>
                         <a href="javascript:void(0)" class="download-link" id="download_vat" onclick="downloadFile('VAT')">在线导出</a>
                     </div>
@@ -450,13 +450,10 @@
                     </div>
                     <div class="detail-info-item" id="exportDocSection">
                         <label>出口报关资料（正式文件）：</label>
-                        <div class="file-upload-area">
-                            <input type="file" id="detail_exportDocs" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;" onchange="handleFileUpload(this, 'export', 10)">
-                            <button class="btn btn-sm btn-default btn-upload" id="exportUploadBtn" onclick="document.getElementById('detail_exportDocs').click()">
-                                上传文件
-                            </button>
-                            <span class="file-hint">最多5个文件，每个不超过10MB</span>
-                            <div id="exportFileList" class="file-list"></div>
+                        <div class="file-display-area">
+                            <div id="exportFileList" class="file-list">
+                                <span style="color: #999;">暂无文件</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -617,6 +614,9 @@
             </div>
         </div>
     </div>
+
+    <!-- 下拉菜单容器 -->
+    <div id="dropdownPortal"></div>
 
     <script src="script.js"></script>
 </body>
