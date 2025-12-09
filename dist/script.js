@@ -901,50 +901,35 @@ function getImportStatusText(item) {
 function getCustomsActionButtons(item) {
     let buttons = '';
     
-    // 特殊处理:如果当前在出口等待中TAB,只显示导出资料和详情按钮(无上传正式文件)
+    // 特殊处理:如果当前在出口等待中TAB,只显示导出资料和详情按钮(无上传正式文件,无下拉菜单)
     if (currentCustomsStatus === 'export-waiting') {
         buttons = `
             <div class="action-btns">
-                <div class="action-dropdown">
-                    <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                    <div class="action-dropdown-menu">
-                        <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                    </div>
-                </div>
+                <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
             </div>
         `;
         return buttons;
     }
     
-    // 特殊处理:如果当前在出口已放行TAB,显示导出资料、详情和上传正式文件按钮
+    // 特殊处理:如果当前在出口已放行TAB,显示导出资料、详情和上传正式文件按钮(无下拉菜单)
     if (currentCustomsStatus === 'export-released') {
         buttons = `
             <div class="action-btns">
-                <div class="action-dropdown">
-                    <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                    <div class="action-dropdown-menu">
-                        <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                        <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
-                    </div>
-                </div>
+                <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                <button class="action-btn" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
             </div>
         `;
         return buttons;
     }
     
-    // 特殊处理:如果当前在进口等待中TAB,只显示导出资料和详情按钮(等待中无上传正式文件)
+    // 特殊处理:如果当前在进口等待中TAB,只显示导出资料和详情按钮(无上传正式文件,无下拉菜单)
     if (currentCustomsStatus === 'import-waiting') {
         buttons = `
             <div class="action-btns">
-                <div class="action-dropdown">
-                    <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                    <div class="action-dropdown-menu">
-                        <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                        <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                    </div>
-                </div>
+                <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
             </div>
         `;
         return buttons;
@@ -952,32 +937,22 @@ function getCustomsActionButtons(item) {
     
     switch(item.status) {
         case 'export-pre':
-            // 出口预报关(201等待中):导出资料、详情(无上传正式文件)
+            // 出口预报关(201等待中):导出资料、详情(无上传正式文件,无下拉菜单)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-dropdown">
-                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                        <div class="action-dropdown-menu">
-                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                        </div>
-                    </div>
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
                 </div>
             `;
             break;
         case 'export-pending':
-            // 出口待报关(202):确认报关按钮+下拉(导出资料、详情、上传正式文件)
+            // 出口待报关(202):确认报关、导出资料、详情、上传正式文件(无下拉菜单)
             buttons = `
                 <div class="action-btns">
                     <button class="action-btn" onclick="handleConfirmDeclaration(${item.id})">确认报关</button>
-                    <div class="action-dropdown">
-                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                        <div class="action-dropdown-menu">
-                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
-                        </div>
-                    </div>
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
                 </div>
             `;
             break;
@@ -1017,17 +992,12 @@ function getCustomsActionButtons(item) {
             `;
             break;
         case 'export-released':
-            // 出口已放行(205):下拉(导出资料、详情、上传正式文件)
+            // 出口已放行(205):导出资料、详情、上传正式文件(无下拉菜单)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-dropdown">
-                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                        <div class="action-dropdown-menu">
-                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
-                        </div>
-                    </div>
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
                 </div>
             `;
             break;
@@ -1067,17 +1037,12 @@ function getCustomsActionButtons(item) {
             `;
             break;
         case 'import-released':
-            // 进口已放行(104):下拉(导出资料、详情、上传正式文件)
+            // 进口已放行(104):导出资料、详情、上传正式文件(无下拉菜单)
             buttons = `
                 <div class="action-btns">
-                    <div class="action-dropdown">
-                        <button class="action-dropdown-toggle" onclick="toggleActionDropdown(event)">⋯</button>
-                        <div class="action-dropdown-menu">
-                            <button class="action-dropdown-item" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
-                            <button class="action-dropdown-item" onclick="handleCustomsDetail(${item.id})">详情</button>
-                            <button class="action-dropdown-item" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
-                        </div>
-                    </div>
+                    <button class="action-btn" onclick="exportCustomsMaterialDetail(${item.id})">导出资料</button>
+                    <button class="action-btn" onclick="handleCustomsDetail(${item.id})">详情</button>
+                    <button class="action-btn" onclick="handleUploadFormalDoc(${item.id})">上传正式文件</button>
                 </div>
             `;
             break;
